@@ -4,7 +4,7 @@ type ChecklistItem = {
   key: string
   label: string
   done: boolean
-  icon: typeof AtSign
+  icon: typeof UserRound
   onClick: () => void
 }
 
