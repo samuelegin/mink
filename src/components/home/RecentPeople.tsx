@@ -21,7 +21,7 @@ export default function RecentPeople({
       {people.length === 0 ? (
         <div className="mt-2">
           <EmptyStateIllustration
-            image="/home/no-friends.png"
+            image="/home/no-friends.webp"
             alt="Mascot waving toward empty avatar circles waiting for new friends"
             title="No friends yet"
             subtitle="Invite friends to start sending money."

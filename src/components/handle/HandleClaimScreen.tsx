@@ -141,7 +141,7 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
 
       <div className="mx-auto w-full max-w-sm flex flex-col">
         <div className={`h-44 sm:h-52 w-full mt-4 shrink-0 transition-transform ${submitting ? 'animate-pulse' : ''}`}>
-          <OnboardingIllustration src="/onboarding/handle.png" alt="A mascot holding a card that reads Your handle @sam" />
+          <OnboardingIllustration src="/onboarding/handle.webp" alt="A mascot holding a card that reads Your handle @sam" />
         </div>
 
         <div className="text-center mt-4 shrink-0">

@@ -89,7 +89,7 @@ export default function ActivityScreen({ onSend }: { onSend: () => void }) {
         {groups.length === 0 ? (
           <div className="py-4">
             <EmptyStateIllustration
-              image="/home/empty-activity.png"
+              image="/home/empty-activity.webp"
               alt="Mascot waiting beside an empty timeline"
               title="No payments yet"
               subtitle="Send money to your first friend."

@@ -57,12 +57,14 @@ export default function OnboardingScreen({
   totalSteps,
   onContinue,
   onBack,
+  eager = false,
 }: {
   step: OnboardingStep
   stepIndex: number
   totalSteps: number
   onContinue: () => void
   onBack?: () => void
+  eager?: boolean
 }) {
   const textStyle = useFadeIn([stepIndex])
   const touchStartX = useRef<number | null>(null)
@@ -104,7 +106,7 @@ export default function OnboardingScreen({
             <div
               className="w-full max-w-[320px] sm:max-w-[420px] h-[38vh] sm:h-[42vh] [@media(max-height:700px)]:h-[30vh] [@media(max-height:700px)]:sm:h-[32vh]"
             >
-              <OnboardingIllustration src={step.image} alt={step.imageAlt} />
+              <OnboardingIllustration src={step.image} alt={step.imageAlt} eager={eager} />
             </div>
           </div>
 
@@ -164,7 +166,7 @@ export default function OnboardingScreen({
           </div>
 
           <div className="w-full max-w-[520px] h-[460px] mx-auto">
-            <OnboardingIllustration src={step.image} alt={step.imageAlt} delayMs={100} />
+            <OnboardingIllustration src={step.image} alt={step.imageAlt} delayMs={100} eager={eager} />
           </div>
         </div>
       </div>

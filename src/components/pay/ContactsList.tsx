@@ -17,7 +17,7 @@ export default function ContactsList({
     return (
       <div className="pt-2">
         <EmptyStateIllustration
-          image="/home/no-friends.png"
+          image="/home/no-friends.webp"
           alt="Mascot looking around for friends to add"
           title="No contacts yet"
           subtitle="Invite friends and start sending money instantly."

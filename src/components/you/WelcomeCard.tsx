@@ -10,7 +10,7 @@ export default function WelcomeCard({
   return (
     <div className="rounded-3xl bg-white border border-[var(--color-line)] shadow-sm py-8 px-6">
       <EmptyStateIllustration
-        image="/home/no-friends.png"
+        image="/home/no-friends.webp"
         alt="Mascot waving hello"
         title="Welcome to Mink"
         subtitle="Claim your handle, add friends, and start sending money like a message."

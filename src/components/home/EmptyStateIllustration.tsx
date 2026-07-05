@@ -23,10 +23,15 @@ export default function EmptyStateIllustration({
   onAction,
 }: EmptyStateIllustrationProps) {
   const [visible, setVisible] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(id)
+  }, [image])
+
+  useEffect(() => {
+    setImageLoaded(false)
   }, [image])
 
   return (
@@ -44,9 +49,22 @@ export default function EmptyStateIllustration({
         </span>
       )}
 
-      <div className={compact ? 'h-24 w-24' : 'h-44 w-44 sm:h-52 sm:w-52'}>
+      <div className={`relative ${compact ? 'h-24 w-24' : 'h-44 w-44 sm:h-52 sm:w-52'}`}>
         {image ? (
-          <img src={image} alt={alt} loading="lazy" className="w-full h-full object-contain" />
+          <>
+            <div
+              className="absolute inset-0 rounded-2xl bg-[var(--color-mink-tint)]/30 animate-pulse"
+              style={{ opacity: imageLoaded ? 0 : 1, transition: 'opacity 0.3s ease-out' }}
+            />
+            <img
+              src={image}
+              alt={alt}
+              loading="lazy"
+              onLoad={() => setImageLoaded(true)}
+              className="w-full h-full object-contain relative"
+              style={{ opacity: imageLoaded ? 1 : 0, transition: 'opacity 0.4s ease-out' }}
+            />
+          </>
         ) : (
           <div className="w-full h-full rounded-3xl border-2 border-dashed border-[var(--color-line)] bg-[var(--color-mink-tint)]/40 flex items-center justify-center text-[var(--color-ink-soft)]/50">
             <ImageIcon className="h-7 w-7" strokeWidth={1.5} />

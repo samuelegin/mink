@@ -39,7 +39,7 @@ export default function ActivityFeed({
       {items.length === 0 ? (
         <div className="mt-3 pt-4 border-t border-[var(--color-line)]">
           <EmptyStateIllustration
-            image="/home/empty-activity.png"
+            image="/home/empty-activity.webp"
             alt="Mascot looking through a magnifying glass beside an empty activity card"
             title="Your payments will appear here"
             subtitle="Send money to your first friend."
