@@ -13,6 +13,7 @@
     "@magic-ext/oauth2": "^9.0.0",
     "@tailwindcss/vite": "^4.3.2",
     "ethers": "^6.13.0",
+    "jsqr": "^1.4.0",
     "lucide-react": "^1.22.0",
     "magic-sdk": "^29.0.6",
     "qrcode": "^1.5.4",

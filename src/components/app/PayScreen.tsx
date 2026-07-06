@@ -1,19 +1,32 @@
 import { useMemo, useState } from 'react'
-import { QrCode, UserPlus } from 'lucide-react'
+import { QrCode, UserPlus, Wallet2 } from 'lucide-react'
 import PaySearchBar from '../pay/PaySearchBar'
 import QuickActionCards from '../pay/QuickActionCards'
 import RecentPeoplePay from '../pay/RecentPeoplePay'
 import ContactsList from '../pay/ContactsList'
 import PaymentSheet from '../pay/PaymentSheet'
+import QRScanModal from '../pay/QRScanModal'
+import InviteModal from '../pay/InviteModal'
+import AddContactModal from '../pay/AddContactModal'
 import type { PayContact } from '../pay/types'
+import { listLocalContacts } from '../../lib/localContacts'
+import { parseClipboardForRecipient } from '../../lib/clipboardParse'
+import { useToast } from '../../context/ToastContext'
 
 const HANDLE_REGEX = /^[a-z0-9_]{1,32}$/
+const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/
+
+type Modal = 'scan' | 'invite' | 'addContact' | null
 
 export default function PayScreen() {
   const [query, setQuery] = useState('')
   const [activePerson, setActivePerson] = useState<PayContact | null>(null)
+  const [contacts, setContacts] = useState<PayContact[]>(() => listLocalContacts())
+  const [modal, setModal] = useState<Modal>(null)
+  const { showToast } = useToast()
+
+  // Wire to real Particle UA + HandleRegistry once ready.
   const recentPeople: PayContact[] = []
- const contacts: PayContact[] = []
 
   const normalizedQuery = query.trim().toLowerCase().replace(/^@/, '')
 
@@ -37,10 +50,51 @@ export default function PayScreen() {
 
   const isSearching = normalizedQuery.length > 0
   const hasAnyMatch = filteredContacts.length > 0 || filteredRecent.length > 0
+  const trimmedQuery = query.trim()
   const canPayTypedHandle = isSearching && HANDLE_REGEX.test(normalizedQuery) && !hasAnyMatch
+  const canPayTypedAddress = isSearching && ADDRESS_REGEX.test(trimmedQuery) && !hasAnyMatch
 
   async function handlePaymentSettled() {
     // Refresh balances/activity here once those read from real chain/backend data.
+  }
+
+  function handleQRResolved(recipient: { handle?: string; address?: string }) {
+    setModal(null)
+    if (recipient.handle) {
+      setActivePerson({ handle: recipient.handle })
+    } else if (recipient.address) {
+      setActivePerson({ handle: recipient.address, name: `${recipient.address.slice(0, 6)}…${recipient.address.slice(-4)}` })
+    }
+  }
+
+  async function handlePasteHandle() {
+    try {
+      const text = await navigator.clipboard.readText()
+      const parsed = parseClipboardForRecipient(text)
+      if (!parsed) {
+        showToast('No valid Mink handle found in your clipboard.')
+        return
+      }
+      setQuery(parsed.value)
+    } catch (err) {
+      console.error('Clipboard read failed', err)
+      showToast("We couldn't read your clipboard. Check your browser permissions.")
+    }
+  }
+
+  function handleEnterSearch() {
+    if (canPayTypedHandle) {
+      setActivePerson({ handle: normalizedQuery })
+    } else if (canPayTypedAddress) {
+      setActivePerson({ handle: trimmedQuery, name: `${trimmedQuery.slice(0, 6)}…${trimmedQuery.slice(-4)}` })
+    } else if (filteredContacts.length === 1) {
+      setActivePerson(filteredContacts[0])
+    }
+  }
+
+  function handleContactAdded(contact: PayContact) {
+    setContacts(listLocalContacts())
+    setActivePerson(contact)
   }
 
   return (
@@ -49,7 +103,7 @@ export default function PayScreen() {
       <p className="text-[var(--color-ink-soft)] mt-1">Send money to friends using their @handle.</p>
 
       <div className="mt-6">
-        <PaySearchBar value={query} onChange={setQuery} />
+        <PaySearchBar value={query} onChange={setQuery} onEnter={handleEnterSearch} />
       </div>
 
       {isSearching ? (
@@ -73,7 +127,20 @@ export default function PayScreen() {
               </p>
             </button>
           )}
-          {!hasAnyMatch && !canPayTypedHandle && (
+          {canPayTypedAddress && (
+            <button
+              onClick={() => setActivePerson({ handle: trimmedQuery, name: `${trimmedQuery.slice(0, 6)}…${trimmedQuery.slice(-4)}` })}
+              className="flex items-center gap-3 py-3.5 text-left w-full hover:bg-[var(--color-mink-tint)]/40 rounded-xl transition-colors"
+            >
+              <div className="h-11 w-11 rounded-full bg-[var(--color-mink-tint)] flex items-center justify-center shrink-0">
+                <Wallet2 className="h-5 w-5 text-[var(--color-mink-deep)]" />
+              </div>
+              <p className="text-sm font-medium">
+                Pay <span className="text-[var(--color-mink-deep)]">{trimmedQuery.slice(0, 10)}…{trimmedQuery.slice(-6)}</span>
+              </p>
+            </button>
+          )}
+          {!hasAnyMatch && !canPayTypedHandle && !canPayTypedAddress && (
             <p className="text-sm text-[var(--color-ink-soft)] py-6 text-center">
               No matches. Try a different name or @handle.
             </p>
@@ -82,24 +149,25 @@ export default function PayScreen() {
       ) : (
         <div className="flex flex-col gap-9 mt-8">
           <QuickActionCards
-            onScan={() => {}}
-            onPasteHandle={() => {}}
-            onInvite={() => {}}
-            onNewContact={() => {}}
+            onScan={() => setModal('scan')}
+            onPasteHandle={handlePasteHandle}
+            onInvite={() => setModal('invite')}
+            onNewContact={() => setModal('addContact')}
           />
           <RecentPeoplePay people={recentPeople} onSelect={setActivePerson} />
           <ContactsList
             contacts={contacts}
             onSelect={setActivePerson}
-            onInvite={() => {}}
-            onScan={() => {}}
+            onInvite={() => setModal('invite')}
+            onScan={() => setModal('scan')}
           />
         </div>
       )}
 
       <button
+        onClick={() => setModal('scan')}
         aria-label="Scan QR"
-        className="lg:hidden fixed bottom-24 right-5 h-14 w-14 rounded-full bg-[var(--color-ink)] text-[var(--color-paper)] shadow-lg flex items-center justify-center hover:bg-[var(--color-mink-deep)] transition-colors z-30"
+        className="lg:hidden fixed bottom-24 right-5 h-14 w-14 rounded-full bg-[var(--color-ink)] text-[var(--color-paper)] shadow-lg flex items-center justify-center hover:bg-[var(--color-mink-deep)] active:scale-95 transition-all duration-150 z-30"
       >
         <QrCode className="h-6 w-6" />
       </button>
@@ -107,6 +175,10 @@ export default function PayScreen() {
       {activePerson && (
         <PaymentSheet person={activePerson} onClose={() => setActivePerson(null)} onSettled={handlePaymentSettled} />
       )}
+
+      {modal === 'scan' && <QRScanModal onClose={() => setModal(null)} onResolved={handleQRResolved} />}
+      {modal === 'invite' && <InviteModal onClose={() => setModal(null)} />}
+      {modal === 'addContact' && <AddContactModal onClose={() => setModal(null)} onAdded={handleContactAdded} />}
     </div>
   )
 }
