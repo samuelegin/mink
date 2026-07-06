@@ -14,7 +14,7 @@ export default function AppShell({ handle }: { handle: string }) {
       <Sidebar active={tab} onChange={setTab} />
 
       <div className="lg:pl-[220px]">
-        {tab === 'home' && <HomeScreen handle={handle} onSend={() => setTab('pay')} />}
+        {tab === 'home' && <HomeScreen handle={handle} onSend={() => setTab('pay')} onOpenProfile={() => setTab('you')} />}
         {tab === 'pay' && <PayScreen />}
         {tab === 'activity' && <ActivityScreen onSend={() => setTab('pay')} />}
         {tab === 'you' && <YouScreen handle={handle} />}

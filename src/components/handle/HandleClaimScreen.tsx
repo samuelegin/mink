@@ -1,3 +1,5 @@
+import Logo from '../Logo'
+import HandleClaimSuccess from './HandleClaimSuccess'
 import { useEffect, useRef, useState } from 'react'
 import { Check, X, Loader2 } from 'lucide-react'
 import OnboardingIllustration from '../onboarding/OnboardingIllustration'
@@ -110,34 +112,12 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
   }
 
   if (claimedHandle) {
-    return (
-      <div className="min-h-screen bg-[var(--color-paper)] flex flex-col items-center justify-center px-6 text-center">
-        <div className="h-16 w-16 rounded-full bg-[var(--color-moss)] text-white flex items-center justify-center">
-          <Check className="h-7 w-7" strokeWidth={2.5} />
-        </div>
-        <p className="font-display font-bold text-2xl mt-6">Handle Reserved</p>
-        <p className="text-[var(--color-ink-soft)] mt-2 max-w-xs">
-          You're now <span className="font-semibold text-[var(--color-ink)]">@{claimedHandle}</span>. Friends
-          can start sending you money instantly.
-        </p>
-        <button
-          onClick={onComplete}
-          className="mt-8 w-full max-w-xs rounded-full bg-[var(--color-ink)] text-[var(--color-paper)] font-semibold py-4 hover:bg-[var(--color-mink-deep)] transition-colors"
-        >
-          Continue to Home
-        </button>
-      </div>
-    )
+    return <HandleClaimSuccess handle={claimedHandle} onContinue={onComplete} />
   }
 
   return (
     <div className="min-h-screen bg-[var(--color-paper)] flex flex-col px-6 pt-8 pb-8">
-      <div className="flex items-center justify-center gap-2">
-        <div className="h-7 w-7 rounded-lg bg-[var(--color-ink)] flex items-center justify-center">
-          <span className="text-[var(--color-paper)] font-display font-bold text-xs">m</span>
-        </div>
-        <span className="font-display font-bold text-base">mink</span>
-      </div>
+      <div className="flex justify-center"><Logo size="sm" /></div>
 
       <div className="mx-auto w-full max-w-sm flex flex-col">
         <div className={`h-44 sm:h-52 w-full mt-4 shrink-0 transition-transform ${submitting ? 'animate-pulse' : ''}`}>

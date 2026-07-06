@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import ProfileHeroCard from '../you/ProfileHeroCard'
+import UniversalAccountCard from '../you/UniversalAccountCard'
 import QRModal from '../you/QRModal'
 import { SettingsSection, SettingsRow } from '../you/SettingsSection'
 import Toggle from '../you/Toggle'
@@ -32,7 +33,7 @@ export default function YouScreen({ handle }: { handle: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-[760px] px-5 lg:px-8 pt-6 pb-28 lg:pb-16">
+    <div className="mx-auto max-w-[920px] px-5 lg:px-8 pt-6 pb-28 lg:pb-16">
       <h1 className="font-display font-bold text-3xl mb-6">You</h1>
 
       <ProfileHeroCard
@@ -42,10 +43,16 @@ export default function YouScreen({ handle }: { handle: string }) {
         onShowQR={() => setShowQR(true)}
       />
 
+      {user && <UniversalAccountCard address={user.address} />}
+
       <SettingsSection title="Account">
         <SettingsRow label="Email" value={user?.email ?? '—'} />
-        <SettingsRow label="Wallet" value={user ? truncateAddress(user.address) : '—'} />
-        <SettingsRow label="Handle" value={`@${handle}`} />
+        <SettingsRow
+          label="Wallet"
+          value={user ? truncateAddress(user.address) : '—'}
+          copyValue={user?.address}
+        />
+        <SettingsRow label="Handle" value={`@${handle}`} copyValue={`@${handle}`} />
         <SettingsRow label="Connected login" value="Email or Google" />
       </SettingsSection>
 
@@ -56,18 +63,24 @@ export default function YouScreen({ handle }: { handle: string }) {
         <SettingsRow label="Privacy" trailing={<Toggle checked={privacy} onChange={setPrivacy} />} />
       </SettingsSection>
 
-      <SettingsSection title="Security">
-        <SettingsRow label="Backup Wallet" onClick={() => {}} />
-        <SettingsRow label="Connected sessions" value="Coming soon" />
-        <SettingsRow label="Log Out" onClick={logout} danger />
-      </SettingsSection>
-
       <SettingsSection title="Support">
         <SettingsRow label="Help Center" onClick={() => {}} />
         <SettingsRow label="Contact Support" onClick={() => {}} />
         <SettingsRow label="Terms" onClick={() => {}} />
         <SettingsRow label="Privacy Policy" onClick={() => {}} />
       </SettingsSection>
+
+      <SettingsSection title="Security">
+        <SettingsRow label="Backup Wallet" onClick={() => {}} />
+        <SettingsRow label="Connected sessions" value="Coming soon" />
+      </SettingsSection>
+
+      <button
+        onClick={logout}
+        className="w-full min-h-[57px] flex items-center px-5 mt-4 rounded-2xl text-red-500 font-medium text-sm hover:bg-red-50 transition-colors"
+      >
+        Log Out
+      </button>
 
       {showQR && <QRModal handle={handle} onClose={() => setShowQR(false)} />}
     </div>

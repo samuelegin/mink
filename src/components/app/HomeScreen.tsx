@@ -1,3 +1,4 @@
+import Logo from '../Logo'
 import { useAuth } from '../../context/AuthContext'
 import HeroBalanceCard from '../home/HeroBalanceCard'
 import QuickActions from '../home/QuickActions'
@@ -5,24 +6,39 @@ import ActivityFeed from '../home/ActivityFeed'
 import RecentPeople from '../home/RecentPeople'
 import ProfileChecklist from '../home/ProfileChecklist'
 
-export default function HomeScreen({ handle, onSend }: { handle: string; onSend: () => void }) {
+export default function HomeScreen({
+  handle,
+  onSend,
+  onOpenProfile,
+}: {
+  handle: string
+  onSend: () => void
+  onOpenProfile?: () => void
+}) {
   const { user } = useAuth()
+  const initial = (user?.email ?? user?.address ?? '?').charAt(0).toUpperCase()
 
   return (
     <div className="mx-auto max-w-[900px] px-5 lg:px-8 pt-6 pb-28 lg:pb-20">
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-[var(--color-ink)] flex items-center justify-center">
-            <span className="text-[var(--color-paper)] font-display font-bold text-sm">m</span>
+        <Logo />
+
+        <button
+          onClick={onOpenProfile}
+          className="group hidden sm:flex items-center gap-2 rounded-full bg-white pl-3.5 pr-1.5 py-1.5 border border-[var(--color-line)] transition-all duration-200 hover:shadow-md hover:bg-[var(--color-mink-tint)]/40"
+        >
+          <span className="text-[15px] font-medium truncate max-w-[140px]">@{handle}</span>
+          <div className="h-9 w-9 rounded-full bg-[var(--color-mink)] text-white flex items-center justify-center font-semibold text-sm shrink-0 transition-transform duration-200 group-hover:scale-[1.03]">
+            {initial}
           </div>
-          <span className="font-display font-bold text-lg">mink</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--color-ink-soft)] hidden sm:inline">@{handle}</span>
-          <div className="h-9 w-9 rounded-full bg-[var(--color-mink)] text-white flex items-center justify-center font-semibold text-sm">
-            {(user?.email ?? user?.address ?? '?').charAt(0).toUpperCase()}
-          </div>
-        </div>
+        </button>
+
+        <button
+          onClick={onOpenProfile}
+          className="group sm:hidden h-9 w-9 rounded-full bg-[var(--color-mink)] text-white flex items-center justify-center font-semibold text-sm transition-transform duration-200 group-active:scale-95"
+        >
+          {initial}
+        </button>
       </div>
 
       <HeroBalanceCard onSend={onSend} onRequest={() => {}} onAddMoney={() => {}} />

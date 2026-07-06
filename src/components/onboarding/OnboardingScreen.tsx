@@ -1,3 +1,4 @@
+import Logo from '../Logo'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import OnboardingIllustration from './OnboardingIllustration'
@@ -10,16 +11,6 @@ export type OnboardingStep = {
   ctaLabel: string
 }
 
-function Logo() {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-7 w-7 rounded-lg bg-[var(--color-ink)] flex items-center justify-center shrink-0">
-        <span className="text-[var(--color-paper)] font-display font-bold text-xs">m</span>
-      </div>
-      <span className="font-display font-bold text-base">mink</span>
-    </div>
-  )
-}
 
 function ProgressDots({ stepIndex, totalSteps }: { stepIndex: number; totalSteps: number }) {
   return (
@@ -98,7 +89,7 @@ export default function OnboardingScreen({
         onTouchEnd={handleTouchEnd}
       >
         <div className="flex justify-center shrink-0">
-          <Logo />
+          <Logo size="sm" />
         </div>
 
         <div className="flex-1 flex flex-col justify-center min-h-0 py-2">
@@ -135,7 +126,7 @@ export default function OnboardingScreen({
       <div className="hidden lg:flex min-h-[100dvh] items-center justify-center px-12 xl:px-20">
         <div className="w-full max-w-[1280px] grid grid-cols-2 gap-16 items-center">
           <div style={textStyle} className="flex flex-col max-w-md">
-            <Logo />
+            <Logo size="sm" />
             <h1 className="font-display font-bold text-5xl leading-[1.1] tracking-tight mt-10">
               {step.title}
             </h1>

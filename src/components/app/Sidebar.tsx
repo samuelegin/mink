@@ -1,3 +1,4 @@
+import Logo from '../Logo'
 import { Home, QrCode, Activity, User, LogOut } from 'lucide-react'
 import type { Tab } from './BottomNav'
 import { useAuth } from '../../context/AuthContext'
@@ -14,12 +15,7 @@ export default function Sidebar({ active, onChange }: { active: Tab; onChange: (
 
   return (
     <aside className="hidden lg:flex fixed inset-y-0 left-0 w-[220px] flex-col border-r border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-6">
-      <div className="flex items-center gap-2 px-2">
-        <div className="h-8 w-8 rounded-lg bg-[var(--color-ink)] flex items-center justify-center shrink-0">
-          <span className="text-[var(--color-paper)] font-display font-bold text-sm">m</span>
-        </div>
-        <span className="font-display font-bold text-lg">mink</span>
-      </div>
+      <Logo />
 
       <nav className="flex flex-col gap-1 mt-10">
         {TABS.map((tab) => {

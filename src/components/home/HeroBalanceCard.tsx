@@ -1,4 +1,4 @@
-import { ArrowUpRight, ArrowDownLeft } from 'lucide-react'
+import { ArrowUpRight, ArrowDownLeft, Hand } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
 function greeting() {
@@ -43,7 +43,10 @@ export default function HeroBalanceCard({
 
       <div className="relative">
         <p className="text-sm text-white/55">{greeting()}</p>
-        <p className="font-display font-bold text-2xl mt-1">{displayName(user?.email ?? null)} 👋</p>
+        <div className="flex items-center gap-2 mt-1">
+          <p className="font-display font-bold text-2xl">{displayName(user?.email ?? null)}</p>
+          <Hand className="h-5 w-5 text-white/60" strokeWidth={2} />
+        </div>
       </div>
 
       <div className="relative flex-1 flex flex-col justify-center py-6">
