@@ -39,10 +39,8 @@ export default function PayScreen() {
   const hasAnyMatch = filteredContacts.length > 0 || filteredRecent.length > 0
   const canPayTypedHandle = isSearching && HANDLE_REGEX.test(normalizedQuery) && !hasAnyMatch
 
-  async function handleSend(amount: number, message: string) {
-    // Simulated send. Wire to Particle UA + HandleRegistry.logPayment once ready.
-    console.log('sending', amount, message, 'to', activePerson)
-    await new Promise((resolve) => setTimeout(resolve, 900))
+  async function handlePaymentSettled() {
+    // Refresh balances/activity here once those read from real chain/backend data.
   }
 
   return (
@@ -107,7 +105,7 @@ export default function PayScreen() {
       </button>
 
       {activePerson && (
-        <PaymentSheet person={activePerson} onClose={() => setActivePerson(null)} onSend={handleSend} />
+        <PaymentSheet person={activePerson} onClose={() => setActivePerson(null)} onSettled={handlePaymentSettled} />
       )}
     </div>
   )
