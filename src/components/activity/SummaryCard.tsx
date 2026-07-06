@@ -1,3 +1,30 @@
+import { useCountUp } from '../../hooks/useCountUp'
+
+function Metric({
+  label,
+  value,
+  colorClass,
+  sign,
+  showBorder,
+}: {
+  label: string
+  value: number
+  colorClass: string
+  sign: string
+  showBorder: boolean
+}) {
+  const animated = useCountUp(value)
+
+  return (
+    <div className={`flex-1 flex flex-col items-center text-center px-2 ${showBorder ? 'sm:border-l sm:border-[var(--color-line)]' : ''}`}>
+      <p className="text-sm font-medium text-[var(--color-ink-soft)]">{label}</p>
+      <p className={`font-display font-bold text-2xl sm:text-3xl mt-1 ${colorClass}`}>
+        {sign}${animated.toFixed(2)}
+      </p>
+    </div>
+  )
+}
+
 export default function SummaryCard({
   received,
   sent,
@@ -6,28 +33,19 @@ export default function SummaryCard({
   sent: number
 }) {
   const net = received - sent
-  const netSign = net >= 0 ? '+' : '-'
+  const netSign = net > 0 ? '+' : net < 0 ? '-' : ''
+  const netColor =
+    net > 0 ? 'text-[var(--color-moss)]' : net < 0 ? 'text-red-500' : 'text-[var(--color-ink)]'
 
   return (
-    <div className="rounded-2xl bg-white border border-[var(--color-line)] shadow-sm px-5 py-4 flex items-center justify-between">
-      <div>
-        <p className="text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]/60">This Month</p>
-        <div className="flex items-center gap-5 mt-1.5">
-          <span className="text-sm">
-            <span className="text-[var(--color-ink-soft)]">Received </span>
-            <span className="font-semibold text-[var(--color-moss)]">+${received.toFixed(0)}</span>
-          </span>
-          <span className="text-sm">
-            <span className="text-[var(--color-ink-soft)]">Sent </span>
-            <span className="font-semibold">-${sent.toFixed(0)}</span>
-          </span>
-        </div>
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-[11px] uppercase tracking-wider text-[var(--color-ink-soft)]/60">Net</p>
-        <p className="font-display font-bold text-xl mt-0.5">
-          {netSign}${Math.abs(net).toFixed(0)}
-        </p>
+    <div className="rounded-[20px] bg-white border border-[var(--color-line)] shadow-sm p-6">
+      <p className="text-xs uppercase tracking-wider text-[var(--color-ink-soft)]/60 text-center sm:text-left">
+        This Month
+      </p>
+      <div className="flex items-center justify-between mt-3">
+        <Metric label="Received" value={received} colorClass="text-[var(--color-moss)]" sign="+" showBorder={false} />
+        <Metric label="Sent" value={sent} colorClass="text-[var(--color-ink)]" sign="-" showBorder />
+        <Metric label="Net" value={Math.abs(net)} colorClass={netColor} sign={netSign} showBorder />
       </div>
     </div>
   )
