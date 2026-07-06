@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import ProfileHeroCard from '../you/ProfileHeroCard'
-import UniversalAccountCard from '../you/UniversalAccountCard'
+import IdentityCard from '../you/IdentityCard'
 import QRModal from '../you/QRModal'
 import { SettingsSection, SettingsRow } from '../you/SettingsSection'
 import Toggle from '../you/Toggle'
@@ -36,14 +35,15 @@ export default function YouScreen({ handle }: { handle: string }) {
     <div className="mx-auto max-w-[920px] px-5 lg:px-8 pt-6 pb-28 lg:pb-16">
       <h1 className="font-display font-bold text-3xl mb-6">You</h1>
 
-      <ProfileHeroCard
-        name={displayName(user?.email ?? null)}
-        handle={handle}
-        onShare={shareHandle}
-        onShowQR={() => setShowQR(true)}
-      />
-
-      {user && <UniversalAccountCard address={user.address} />}
+      {user && (
+        <IdentityCard
+          name={displayName(user.email ?? null)}
+          handle={handle}
+          address={user.address}
+          onShare={shareHandle}
+          onShowQR={() => setShowQR(true)}
+        />
+      )}
 
       <SettingsSection title="Account">
         <SettingsRow label="Email" value={user?.email ?? '—'} />
