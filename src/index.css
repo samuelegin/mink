@@ -82,6 +82,19 @@ body {
   animation: indeterminate 1.3s ease-in-out infinite;
 }
 
+/* subtle idle breathing loop for the mascot FAB, paused on hover/press so tap feedback stays clean */
+@keyframes fab-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.fab-mascot {
+  animation: fab-breathe 2.6s ease-in-out infinite;
+}
+button:hover .fab-mascot,
+button:active .fab-mascot {
+  animation-play-state: paused;
+}
+
 /* hides scrollbar for horizontally-scrolling rows like the activity stories */
 .scrollbar-none {
   scrollbar-width: none;

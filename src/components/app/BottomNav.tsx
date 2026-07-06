@@ -1,4 +1,4 @@
-import { Home, QrCode, ArrowUp, Activity, User } from 'lucide-react'
+import { Home, QrCode, Activity, User } from 'lucide-react'
 
 export type Tab = 'home' | 'pay' | 'activity' | 'you'
 
@@ -32,10 +32,19 @@ export default function BottomNav({
           <div className="flex justify-center">
             <button
               onClick={onSend}
-              aria-label="Send"
-              className="h-12 w-12 rounded-full bg-[var(--color-ink)] text-[var(--color-paper)] flex items-center justify-center -translate-y-2 shadow-lg hover:bg-[var(--color-mink-deep)] transition-colors"
+              aria-label="Send money"
+              className="h-14 w-14 -translate-y-2 cursor-pointer active:scale-95 hover:scale-105 transition-transform duration-200"
             >
-              <ArrowUp className="h-5 w-5" strokeWidth={2.5} />
+              <div
+                className="fab-mascot h-full w-full rounded-full overflow-hidden border-2 border-white"
+                style={{ boxShadow: '0 10px 25px rgba(0,0,0,.18)' }}
+              >
+                <img
+                  src="/nav/fab-mascot.webp"
+                  alt="Mink AI Assistant"
+                  className="h-full w-full object-cover"
+                />
+              </div>
             </button>
           </div>
 
