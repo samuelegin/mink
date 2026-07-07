@@ -43,7 +43,7 @@ export default function YouScreen({ handle }: { handle: string }) {
 
       {user && (
         <IdentityCard
-          name={profile?.displayName ?? displayName(user.email ?? null)}
+          name={profile?.display_name ?? displayName(user.email ?? null)}
           handle={handle}
           address={user.address}
           onShare={shareHandle}
