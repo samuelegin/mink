@@ -111,7 +111,7 @@ export const apiClient = {
     // backend uses different field names (e.g. accessToken/refreshToken).
     const result = await request<{ access_token?: string; refresh_token?: string }>('/api/v1/auth/login', {
       method: 'POST',
-      headers: { authorization: magicDidToken },
+      headers: { authorization: `Bearer ${magicDidToken}` },
       auth: false,
     })
     setTokens(result)
