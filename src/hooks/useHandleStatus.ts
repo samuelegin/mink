@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getReadContract } from '../lib/contracts'
-import { USE_MOCK_HANDLE_CLAIM } from '../lib/mockConfig'
-import { mockGetHandle } from '../lib/mockHandleRegistry'
 
 export function useHandleStatus(address: string | undefined) {
   const [handle, setHandle] = useState<string | null>(null)
@@ -14,10 +12,6 @@ export function useHandleStatus(address: string | undefined) {
     }
     setLoading(true)
     try {
-      if (USE_MOCK_HANDLE_CLAIM) {
-        setHandle(await mockGetHandle(address))
-        return
-      }
       const contract = getReadContract()
       const result: string = await contract.handleOf(address)
       setHandle(result && result.length > 0 ? result : null)

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Copy, Share2, Pencil, Check, X, Loader2 } from 'lucide-react'
-import { mockIsAvailable } from '../../lib/mockHandleRegistry'
+import { getReadContract } from '../../lib/contracts'
 
 const HANDLE_REGEX = /^[a-z0-9_]{1,32}$/
 
@@ -27,8 +27,13 @@ export default function HandleCard({ handle }: { handle: string }) {
     }
     setAvailability('checking')
     debounceRef.current = setTimeout(async () => {
-      const ok = await mockIsAvailable(value)
-      setAvailability(ok ? 'available' : 'taken')
+      try {
+        const ok: boolean = await getReadContract().isAvailable(value)
+        setAvailability(ok ? 'available' : 'taken')
+      } catch (err) {
+        console.error('Availability check failed', err)
+        setAvailability('idle')
+      }
     }, 400)
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)

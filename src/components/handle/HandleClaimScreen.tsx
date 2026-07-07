@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Check, X, Loader2 } from 'lucide-react'
 import OnboardingIllustration from '../onboarding/OnboardingIllustration'
 import { getReadContract, getWriteContract, decodeRegistryError } from '../../lib/contracts'
-import { USE_MOCK_HANDLE_CLAIM } from '../../lib/mockConfig'
-import { mockIsAvailable, mockClaimHandle } from '../../lib/mockHandleRegistry'
 import { useAuth } from '../../context/AuthContext'
 
 type Availability = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
@@ -63,9 +61,7 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
     setAvailability('checking')
     debounceRef.current = setTimeout(async () => {
       try {
-        const checkAvailable = USE_MOCK_HANDLE_CLAIM
-          ? mockIsAvailable
-          : async (h: string) => getReadContract().isAvailable(h)
+        const checkAvailable = async (h: string) => getReadContract().isAvailable(h)
 
         const available = await checkAvailable(value)
         if (available) {
@@ -95,13 +91,9 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
     setSubmitting(true)
     setError(null)
     try {
-      if (USE_MOCK_HANDLE_CLAIM) {
-        await mockClaimHandle(user.address, value)
-      } else {
-        const contract = await getWriteContract()
-        const tx = await contract.registerHandle(value)
-        await tx.wait()
-      }
+      const contract = await getWriteContract()
+      const tx = await contract.registerHandle(value)
+      await tx.wait()
       setClaimedHandle(value)
     } catch (err) {
       console.error('Claim failed', err)
