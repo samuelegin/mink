@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { magic, getWalletAddress } from '../lib/magic'
+import { apiClient } from '../lib/apiClient'
+import { api, type UserProfile } from '../lib/api'
 
 type AuthUser = {
   email: string | null
@@ -8,10 +10,19 @@ type AuthUser = {
 
 type AuthStatus = 'idle' | 'checking' | 'sending' | 'authenticated'
 
+// Separate from AuthStatus: Magic auth can succeed while the backend session
+// (login/profile fetch) is still in flight or has failed independently.
+type BackendStatus = 'idle' | 'loading' | 'ready' | 'error'
+
 type AuthContextValue = {
   user: AuthUser | null
   status: AuthStatus
   error: string | null
+  profile: UserProfile | null
+  backendStatus: BackendStatus
+  backendError: string | null
+  refreshProfile: () => Promise<void>
+  retryBackendSession: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
@@ -23,6 +34,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [status, setStatus] = useState<AuthStatus>('checking')
   const [error, setError] = useState<string | null>(null)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [backendStatus, setBackendStatus] = useState<BackendStatus>('idle')
+  const [backendError, setBackendError] = useState<string | null>(null)
+
+  async function establishBackendSession() {
+    setBackendStatus('loading')
+    setBackendError(null)
+    try {
+      const didToken = await magic.user.getIdToken()
+      await apiClient.login(didToken)
+      const me = await api.users.me()
+      setProfile(me)
+      setBackendStatus('ready')
+    } catch (err) {
+      console.error('Backend session failed', err)
+      setBackendError(err instanceof Error ? err.message : 'Could not reach the mink backend.')
+      setBackendStatus('error')
+    }
+  }
+
+  async function refreshProfile() {
+    try {
+      const me = await api.users.me()
+      setProfile(me)
+    } catch (err) {
+      console.error('Profile refresh failed', err)
+    }
+  }
 
   async function loadUser() {
     const info = await magic.user.getInfo()
@@ -30,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!address) throw new Error('No wallet address returned from Magic')
     setUser({ email: info.email ?? null, address })
     setStatus('authenticated')
+    await establishBackendSession()
   }
 
   useEffect(() => {
@@ -72,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     resumeSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function loginWithEmail(email: string) {
@@ -108,12 +149,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     await magic.user.logout()
+    await apiClient.logout()
     setUser(null)
+    setProfile(null)
+    setBackendStatus('idle')
     setStatus('idle')
   }
 
   return (
-    <AuthContext.Provider value={{ user, status, error, loginWithEmail, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        status,
+        error,
+        profile,
+        backendStatus,
+        backendError,
+        refreshProfile,
+        retryBackendSession: establishBackendSession,
+        loginWithEmail,
+        loginWithGoogle,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

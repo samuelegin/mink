@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import { X, UserPlus, Wallet2, Smartphone, Check } from 'lucide-react'
-import { addLocalContact, isValidHandle, isValidAddress } from '../../lib/localContacts'
+import { useEffect, useState } from 'react'
+import { X, UserPlus, Wallet2, Smartphone, Check, Loader2, Search } from 'lucide-react'
+import { isValidAddress } from '../../lib/localContacts'
+import { searchUsers } from '../../lib/api/users'
+import { sendFriendRequest } from '../../lib/api/friends'
 import { useToast } from '../../context/ToastContext'
 import type { PayContact } from './types'
+import type { MinkProfile } from '../../lib/api/users'
 
 type Tab = 'handle' | 'address' | 'import'
 
@@ -10,6 +13,15 @@ type Tab = 'handle' | 'address' | 'import'
 // desktop or iOS. Feature-detected below rather than assumed.
 const hasContactPicker =
   typeof navigator !== 'undefined' && 'contacts' in navigator && 'select' in (navigator as any).contacts
+
+function toPayContact(profile: MinkProfile): PayContact {
+  return {
+    handle: profile.handle,
+    name: profile.displayName ?? undefined,
+    avatarUrl: profile.avatarUrl ?? undefined,
+    verified: true,
+  }
+}
 
 export default function AddContactModal({
   onClose,
@@ -19,36 +31,61 @@ export default function AddContactModal({
   onAdded: (contact: PayContact) => void
 }) {
   const [tab, setTab] = useState<Tab>('handle')
-  const [value, setValue] = useState('')
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState<MinkProfile[]>([])
+  const [searching, setSearching] = useState(false)
+  const [sendingTo, setSendingTo] = useState<string | null>(null)
+  const [addressValue, setAddressValue] = useState('')
   const [error, setError] = useState<string | null>(null)
   const { showToast } = useToast()
 
-  function submitHandle() {
-    const clean = value.trim().replace(/^@/, '')
-    if (!isValidHandle(clean)) {
-      setError('Enter a valid handle (letters, numbers, underscore).')
+  // Search-as-you-type against the real user directory (debounced).
+  useEffect(() => {
+    const clean = query.trim().replace(/^@/, '')
+    if (!clean) {
+      setResults([])
+      setSearching(false)
       return
     }
-    save({ handle: clean })
+    setSearching(true)
+    const timeout = setTimeout(async () => {
+      try {
+        const found = await searchUsers(clean, 10)
+        setResults(found)
+      } catch (err) {
+        console.error('User search failed', err)
+      } finally {
+        setSearching(false)
+      }
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [query])
+
+  async function requestFriend(profile: MinkProfile) {
+    setSendingTo(profile.id)
+    setError(null)
+    try {
+      await sendFriendRequest(profile.id)
+      showToast(`Friend request sent to @${profile.handle}`)
+      onAdded(toPayContact(profile))
+      onClose()
+    } catch (err) {
+      console.error('Sending friend request failed', err)
+      setError("Couldn't send that friend request. Try again.")
+    } finally {
+      setSendingTo(null)
+    }
   }
 
   function submitAddress() {
-    const clean = value.trim()
+    const clean = addressValue.trim()
     if (!isValidAddress(clean)) {
       setError('Enter a valid wallet address (0x...).')
       return
     }
-    save({ handle: clean, name: `${clean.slice(0, 6)}…${clean.slice(-4)}` })
-  }
-
-  function save(contact: PayContact) {
-    const result = addLocalContact(contact)
-    if (!result.ok) {
-      setError(result.reason ?? 'Could not save that contact.')
-      return
-    }
-    showToast('Contact added')
-    onAdded(contact)
+    // No friend-request concept for a raw address (no user id to target), so this
+    // just opens the payment sheet directly rather than saving a "contact".
+    onAdded({ handle: clean, name: `${clean.slice(0, 6)}…${clean.slice(-4)}` })
     onClose()
   }
 
@@ -59,9 +96,10 @@ export default function AddContactModal({
       if (!contacts?.length) return
       const picked = contacts[0]
       const name = picked.name?.[0] ?? 'Contact'
-      // No phone-number-to-handle resolution backend exists, so this saves a
-      // placeholder entry the person can complete with a real handle later.
-      save({ handle: name.toLowerCase().replace(/\s+/g, '_'), name })
+      // No phone-number-to-handle resolution exists on the backend, so fall back
+      // to a handle search using their name as a starting point.
+      setTab('handle')
+      setQuery(name)
     } catch (err) {
       console.error('Contact picker failed or was cancelled', err)
     }
@@ -80,34 +118,62 @@ export default function AddContactModal({
         </div>
 
         <div className="flex gap-2">
-          <TabButton active={tab === 'handle'} onClick={() => { setTab('handle'); setError(null); setValue('') }} icon={UserPlus} label="Handle" />
-          <TabButton active={tab === 'address'} onClick={() => { setTab('address'); setError(null); setValue('') }} icon={Wallet2} label="Address" />
+          <TabButton active={tab === 'handle'} onClick={() => { setTab('handle'); setError(null) }} icon={UserPlus} label="Handle" />
+          <TabButton active={tab === 'address'} onClick={() => { setTab('address'); setError(null) }} icon={Wallet2} label="Address" />
           <TabButton active={tab === 'import'} onClick={() => { setTab('import'); setError(null) }} icon={Smartphone} label="Import" />
         </div>
 
         {tab === 'handle' && (
           <div className="mt-5">
-            <p className="text-xs text-[var(--color-ink-soft)] mb-2">
-              We don't have a public user directory yet, so enter their exact handle.
-            </p>
             <div className="flex items-center rounded-full border border-[var(--color-line)] px-4 py-3">
-              <span className="text-[var(--color-ink-soft)]/50 mr-0.5">@</span>
+              <Search className="h-4 w-4 text-[var(--color-ink-soft)]/60 mr-2 shrink-0" />
               <input
                 autoFocus
-                value={value}
-                onChange={(e) => setValue(e.target.value.replace(/\s/g, ''))}
-                placeholder="handle"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by name or @handle"
                 className="flex-1 outline-none bg-transparent text-sm"
               />
+              {searching && <Loader2 className="h-4 w-4 animate-spin text-[var(--color-ink-soft)]" />}
             </div>
+
             {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
-            <button
-              onClick={submitHandle}
-              disabled={!value}
-              className="w-full rounded-full bg-[var(--color-ink)] text-white font-semibold py-3 mt-4 hover:bg-[var(--color-mink-deep)] transition-colors disabled:opacity-40"
-            >
-              Add contact
-            </button>
+
+            <div className="flex flex-col divide-y divide-[var(--color-line)] mt-3 max-h-64 overflow-y-auto">
+              {results.map((profile) => (
+                <button
+                  key={profile.id}
+                  onClick={() => requestFriend(profile)}
+                  disabled={sendingTo === profile.id}
+                  className="flex items-center gap-3 py-3 text-left w-full hover:bg-[var(--color-mink-tint)]/40 transition-colors disabled:opacity-60"
+                >
+                  <div className="h-10 w-10 rounded-full bg-[var(--color-mink-tint)] flex items-center justify-center overflow-hidden shrink-0">
+                    {profile.avatarUrl ? (
+                      <img src={profile.avatarUrl} alt={profile.handle} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="font-semibold text-[var(--color-mink-deep)]">
+                        {(profile.displayName ?? profile.handle).charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{profile.displayName ?? `@${profile.handle}`}</p>
+                    <p className="text-xs text-[var(--color-ink-soft)] truncate">@{profile.handle}</p>
+                  </div>
+                  {sendingTo === profile.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--color-ink-soft)]" />
+                  ) : (
+                    <span className="text-xs font-medium text-[var(--color-mink-deep)]">Add</span>
+                  )}
+                </button>
+              ))}
+
+              {!searching && query.trim() && results.length === 0 && (
+                <p className="text-sm text-[var(--color-ink-soft)] py-6 text-center">
+                  No one found for "{query.trim()}".
+                </p>
+              )}
+            </div>
           </div>
         )}
 
@@ -115,18 +181,18 @@ export default function AddContactModal({
           <div className="mt-5">
             <input
               autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value.trim())}
+              value={addressValue}
+              onChange={(e) => setAddressValue(e.target.value.trim())}
               placeholder="0x..."
               className="w-full rounded-full border border-[var(--color-line)] px-4 py-3 text-sm outline-none focus:border-[var(--color-mink)] transition-colors"
             />
             {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
             <button
               onClick={submitAddress}
-              disabled={!value}
+              disabled={!addressValue}
               className="w-full rounded-full bg-[var(--color-ink)] text-white font-semibold py-3 mt-4 hover:bg-[var(--color-mink-deep)] transition-colors disabled:opacity-40"
             >
-              Add contact
+              Pay this address
             </button>
           </div>
         )}

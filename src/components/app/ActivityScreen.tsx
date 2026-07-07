@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import RecentFriendsStories from '../activity/RecentFriendsStories'
 import FriendHistoryDrawer from '../activity/FriendHistoryDrawer'
@@ -9,20 +9,36 @@ import TransactionDetailSheet from '../activity/TransactionDetailSheet'
 import EmptyStateIllustration from '../home/EmptyStateIllustration'
 import { groupByPeriod, recentFriends, type RecentFriend } from '../activity/activityUtils'
 import type { ActivityEntry } from '../activity/types'
+import { listActivity, getActivitySummary } from '../../lib/api/activity'
+import { useAuth } from '../../context/AuthContext'
 
 export default function ActivityScreen({ onSend }: { onSend: () => void }) {
+  const { backendReady } = useAuth()
   const [filter, setFilter] = useState<ActivityFilter>('all')
   const [query, setQuery] = useState('')
   const [selectedEntry, setSelectedEntry] = useState<ActivityEntry | null>(null)
   const [selectedFriend, setSelectedFriend] = useState<RecentFriend | null>(null)
+  const [entries, setEntries] = useState<ActivityEntry[]>([])
+  const [summary, setSummary] = useState<{ totalSent: number; totalReceived: number } | null>(null)
 
-  // Wire to real Particle UA + HandleRegistry.PaymentLogged events once ready.
-  const entries: ActivityEntry[] = []
+  useEffect(() => {
+    if (!backendReady) return
+    // The API supports server-side direction + date-range + search filtering, but
+    // "week"/"month"/"pending" filters are client-side concepts in this UI, so we
+    // fetch a broad recent window here and keep the existing client-side filtering
+    // below rather than round-tripping on every filter chip click.
+    listActivity({ limit: 100 })
+      .then(setEntries)
+      .catch((err) => console.error('Failed to load activity feed', err))
+    getActivitySummary()
+      .then((s) => setSummary({ totalSent: s.totalSent, totalReceived: s.totalReceived }))
+      .catch((err) => console.error('Failed to load activity summary', err))
+  }, [backendReady])
 
   const friends = useMemo(() => recentFriends(entries), [entries])
 
-  const received = entries.filter((e) => e.kind === 'received').reduce((sum, e) => sum + e.amount, 0)
-  const sent = entries.filter((e) => e.kind === 'sent').reduce((sum, e) => sum + e.amount, 0)
+  const received = summary?.totalReceived ?? entries.filter((e) => e.kind === 'received').reduce((sum, e) => sum + e.amount, 0)
+  const sent = summary?.totalSent ?? entries.filter((e) => e.kind === 'sent').reduce((sum, e) => sum + e.amount, 0)
 
   const filtered = useMemo(() => {
     const now = Date.now()

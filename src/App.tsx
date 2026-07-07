@@ -12,7 +12,6 @@ import Onboarding from './components/onboarding/Onboarding'
 import HandleClaimScreen from './components/handle/HandleClaimScreen'
 import { useAuth } from './context/AuthContext'
 import { useOnboardingStatus } from './hooks/useOnboardingStatus'
-import { useHandleStatus } from './hooks/useHandleStatus'
 
 function Spinner() {
   return (
@@ -22,10 +21,24 @@ function Spinner() {
   )
 }
 
+function BackendErrorScreen({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--color-paper)] px-6 text-center">
+      <p className="font-display font-bold text-xl">Couldn't reach mink</p>
+      <p className="text-sm text-[var(--color-ink-soft)] mt-2 max-w-xs">{message}</p>
+      <button
+        onClick={onRetry}
+        className="mt-6 rounded-full bg-[var(--color-ink)] text-[var(--color-paper)] font-semibold px-6 py-3 hover:bg-[var(--color-mink-deep)] transition-colors"
+      >
+        Try again
+      </button>
+    </div>
+  )
+}
+
 function App() {
-  const { status, user } = useAuth()
+  const { status, user, profile, backendStatus, backendError, refreshProfile, retryBackendSession } = useAuth()
   const { onboarded, markOnboarded } = useOnboardingStatus(user?.address)
-  const { handle, loading: handleLoading, refresh: refreshHandle } = useHandleStatus(user?.address)
 
   if (status === 'checking') {
     return <Spinner />
@@ -36,15 +49,19 @@ function App() {
       return <Onboarding onComplete={markOnboarded} />
     }
 
-    if (handleLoading) {
+    if (backendStatus === 'loading' || backendStatus === 'idle') {
       return <Spinner />
     }
 
-    if (!handle) {
-      return <HandleClaimScreen onComplete={refreshHandle} />
+    if (backendStatus === 'error') {
+      return <BackendErrorScreen message={backendError ?? 'Something went wrong.'} onRetry={retryBackendSession} />
     }
 
-    return <AppShell handle={handle} />
+    if (!profile?.handle) {
+      return <HandleClaimScreen onComplete={refreshProfile} />
+    }
+
+    return <AppShell handle={profile.handle} />
   }
 
   return (

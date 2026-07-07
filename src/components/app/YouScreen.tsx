@@ -15,8 +15,14 @@ function truncateAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
+function loginMethodLabel(method: 'email' | 'google' | null, email: string | null) {
+  if (method === 'google') return 'Google'
+  if (method === 'email') return email ? `Email link (${email})` : 'Email link'
+  return 'Email or Google'
+}
+
 export default function YouScreen({ handle }: { handle: string }) {
-  const { user, logout } = useAuth()
+  const { user, profile, loginMethod, logout } = useAuth()
   const [showQR, setShowQR] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [privacy, setPrivacy] = useState(false)
@@ -37,7 +43,7 @@ export default function YouScreen({ handle }: { handle: string }) {
 
       {user && (
         <IdentityCard
-          name={displayName(user.email ?? null)}
+          name={profile?.displayName ?? displayName(user.email ?? null)}
           handle={handle}
           address={user.address}
           onShare={shareHandle}
@@ -53,7 +59,7 @@ export default function YouScreen({ handle }: { handle: string }) {
           copyValue={user?.address}
         />
         <SettingsRow label="Handle" value={`@${handle}`} copyValue={`@${handle}`} />
-        <SettingsRow label="Connected login" value="Email or Google" />
+        <SettingsRow label="Connected login" value={loginMethodLabel(loginMethod, user?.email ?? null)} />
       </SettingsSection>
 
       <SettingsSection title="Preferences">

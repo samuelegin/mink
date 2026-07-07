@@ -3,8 +3,7 @@ import HandleClaimSuccess from './HandleClaimSuccess'
 import { useEffect, useRef, useState } from 'react'
 import { Check, X, Loader2 } from 'lucide-react'
 import OnboardingIllustration from '../onboarding/OnboardingIllustration'
-import { getReadContract, getWriteContract, decodeRegistryError } from '../../lib/contracts'
-import { useAuth } from '../../context/AuthContext'
+import { api, friendlyClaimError } from '../../lib/api'
 
 type Availability = 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
 
@@ -22,7 +21,6 @@ function sanitize(input: string) {
 }
 
 export default function HandleClaimScreen({ onComplete }: { onComplete: () => void }) {
-  const { user } = useAuth()
   const [value, setValue] = useState('')
   const [availability, setAvailability] = useState<Availability>('idle')
   const [suggestions, setSuggestions] = useState<string[]>([])
@@ -61,7 +59,10 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
     setAvailability('checking')
     debounceRef.current = setTimeout(async () => {
       try {
-        const checkAvailable = async (h: string) => getReadContract().isAvailable(h)
+        const checkAvailable = async (h: string) => {
+          const result = await api.handles.checkAvailability(h)
+          return result.available
+        }
 
         const available = await checkAvailable(value)
         if (available) {
@@ -87,17 +88,15 @@ export default function HandleClaimScreen({ onComplete }: { onComplete: () => vo
   }, [value])
 
   async function handleClaim() {
-    if (availability !== 'available' || !user) return
+    if (availability !== 'available') return
     setSubmitting(true)
     setError(null)
     try {
-      const contract = await getWriteContract()
-      const tx = await contract.registerHandle(value)
-      await tx.wait()
+      await api.users.updateMe({ handle: value })
       setClaimedHandle(value)
     } catch (err) {
       console.error('Claim failed', err)
-      setError(decodeRegistryError(err))
+      setError(friendlyClaimError(err))
     } finally {
       setSubmitting(false)
     }

@@ -1,32 +1,48 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { QrCode, UserPlus, Wallet2 } from 'lucide-react'
 import PaySearchBar from '../pay/PaySearchBar'
 import QuickActionCards from '../pay/QuickActionCards'
 import RecentPeoplePay from '../pay/RecentPeoplePay'
 import ContactsList from '../pay/ContactsList'
 import PaymentSheet from '../pay/PaymentSheet'
+import RequestMoneySheet from '../pay/RequestMoneySheet'
 import QRScanModal from '../pay/QRScanModal'
 import InviteModal from '../pay/InviteModal'
 import AddContactModal from '../pay/AddContactModal'
 import type { PayContact } from '../pay/types'
-import { listLocalContacts } from '../../lib/localContacts'
+import { listFriends, recentContacts } from '../../lib/api/friends'
 import { parseClipboardForRecipient } from '../../lib/clipboardParse'
 import { useToast } from '../../context/ToastContext'
+import { useAuth } from '../../context/AuthContext'
 
 const HANDLE_REGEX = /^[a-z0-9_]{1,32}$/
 const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/
 
 type Modal = 'scan' | 'invite' | 'addContact' | null
 
-export default function PayScreen() {
+export default function PayScreen({ intent = 'send' }: { intent?: 'send' | 'request' }) {
+  const { backendReady } = useAuth()
   const [query, setQuery] = useState('')
   const [activePerson, setActivePerson] = useState<PayContact | null>(null)
-  const [contacts, setContacts] = useState<PayContact[]>(() => listLocalContacts())
+  const [contacts, setContacts] = useState<PayContact[]>([])
+  const [recentPeople, setRecentPeople] = useState<PayContact[]>([])
   const [modal, setModal] = useState<Modal>(null)
   const { showToast } = useToast()
 
-  // Wire to real Particle UA + HandleRegistry once ready.
-  const recentPeople: PayContact[] = []
+  async function loadContacts() {
+    try {
+      const [friends, recent] = await Promise.all([listFriends(), recentContacts()])
+      setContacts(friends)
+      setRecentPeople(recent)
+    } catch (err) {
+      console.error('Failed to load contacts', err)
+      showToast("Couldn't load your contacts. Pull to refresh once you're back online.")
+    }
+  }
+
+  useEffect(() => {
+    if (backendReady) loadContacts()
+  }, [backendReady])
 
   const normalizedQuery = query.trim().toLowerCase().replace(/^@/, '')
 
@@ -93,14 +109,21 @@ export default function PayScreen() {
   }
 
   function handleContactAdded(contact: PayContact) {
-    setContacts(listLocalContacts())
+    // Sending a friend request doesn't make them a friend yet (pending acceptance),
+    // so we don't add them to `contacts` optimistically — just let the person pay
+    // them right away, and re-sync the real list in case anything changed.
+    loadContacts()
     setActivePerson(contact)
   }
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 lg:px-8 pt-6 pb-28 lg:pb-16">
-      <h1 className="font-display font-bold text-3xl lg:text-4xl">Pay</h1>
-      <p className="text-[var(--color-ink-soft)] mt-1">Send money to friends using their @handle.</p>
+      <h1 className="font-display font-bold text-3xl lg:text-4xl">{intent === 'request' ? 'Request' : 'Pay'}</h1>
+      <p className="text-[var(--color-ink-soft)] mt-1">
+        {intent === 'request'
+          ? 'Ask a friend to send you money using their @handle.'
+          : 'Send money to friends using their @handle.'}
+      </p>
 
       <div className="mt-6">
         <PaySearchBar value={query} onChange={setQuery} onEnter={handleEnterSearch} />
@@ -172,7 +195,11 @@ export default function PayScreen() {
         <QrCode className="h-6 w-6" />
       </button>
 
-      {activePerson && (
+      {activePerson && intent === 'request' && (
+        <RequestMoneySheet person={activePerson} onClose={() => setActivePerson(null)} />
+      )}
+
+      {activePerson && intent !== 'request' && (
         <PaymentSheet person={activePerson} onClose={() => setActivePerson(null)} onSettled={handlePaymentSettled} />
       )}
 
