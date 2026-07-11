@@ -14,8 +14,6 @@ type AuthStatus = 'idle' | 'checking' | 'sending' | 'authenticated'
 // (login/profile fetch) is still in flight or has failed independently.
 type BackendStatus = 'idle' | 'loading' | 'ready' | 'error'
 
-type LoginMethod = 'email' | 'google' | null
-
 type AuthContextValue = {
   user: AuthUser | null
   status: AuthStatus
@@ -24,35 +22,11 @@ type AuthContextValue = {
   backendStatus: BackendStatus
   backendReady: boolean
   backendError: string | null
-  loginMethod: LoginMethod
   refreshProfile: () => Promise<void>
   retryBackendSession: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
-}
-
-const LOGIN_METHOD_STORAGE_KEY = 'mink:loginMethod'
-
-function readStoredLoginMethod(): LoginMethod {
-  try {
-    const stored = window.localStorage.getItem(LOGIN_METHOD_STORAGE_KEY)
-    return stored === 'email' || stored === 'google' ? stored : null
-  } catch {
-    return null
-  }
-}
-
-function storeLoginMethod(method: LoginMethod) {
-  try {
-    if (method) {
-      window.localStorage.setItem(LOGIN_METHOD_STORAGE_KEY, method)
-    } else {
-      window.localStorage.removeItem(LOGIN_METHOD_STORAGE_KEY)
-    }
-  } catch {
-    // ignore storage errors (e.g. private browsing)
-  }
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -64,7 +38,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [backendStatus, setBackendStatus] = useState<BackendStatus>('idle')
   const [backendError, setBackendError] = useState<string | null>(null)
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>(() => readStoredLoginMethod())
 
   async function establishBackendSession() {
     setBackendStatus('loading')
@@ -109,8 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (params.has('magic_credential')) {
           await magic.auth.loginWithCredential()
           window.history.replaceState({}, '', window.location.pathname)
-          setLoginMethod('email')
-          storeLoginMethod('email')
           await loadUser()
           return
         }
@@ -120,8 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const result = await magic.oauth2.getRedirectResult()
             if (result) {
               window.history.replaceState({}, '', window.location.pathname)
-              setLoginMethod('google')
-              storeLoginMethod('google')
               await loadUser()
               return
             }
@@ -155,8 +124,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         redirectURI: window.location.origin,
       })
-      setLoginMethod('email')
-      storeLoginMethod('email')
       await loadUser()
     } catch (err) {
       console.error('Email login failed', err)
@@ -169,7 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
     setStatus('sending')
     try {
-      storeLoginMethod('google')
       await magic.oauth2.loginWithRedirect({
         provider: 'google',
         redirectURI: window.location.origin,
@@ -189,8 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
     setBackendStatus('idle')
     setStatus('idle')
-    setLoginMethod(null)
-    storeLoginMethod(null)
   }
 
   return (
@@ -203,7 +167,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         backendStatus,
         backendReady: backendStatus === 'ready',
         backendError,
-        loginMethod,
         refreshProfile,
         retryBackendSession: establishBackendSession,
         loginWithEmail,

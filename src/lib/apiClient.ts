@@ -31,6 +31,16 @@ export class ApiError extends Error {
   }
 }
 
+// Every mink API response is wrapped: { success, status_code, message, data }.
+// Confirmed against the real backend source (api/response.py's success_response
+// helper) — this is not a guess.
+type Envelope<T> = {
+  success: boolean
+  status_code: number
+  message: string
+  data: T
+}
+
 async function request<T>(
   path: string,
   options: {
@@ -60,34 +70,35 @@ async function request<T>(
     }
   }
 
-  let data: unknown = null
+  let parsed: unknown = null
   const text = await res.text()
   if (text) {
     try {
-      data = JSON.parse(text)
+      parsed = JSON.parse(text)
     } catch {
-      data = text
+      parsed = text
     }
   }
 
   if (!res.ok) {
     const message =
-      (data as { message?: string; detail?: string })?.message ||
-      (typeof (data as { detail?: unknown })?.detail === 'string' ? (data as { detail: string }).detail : null) ||
-      `Request failed with status ${res.status}`
-    throw new ApiError(res.status, message, data)
+      (parsed as { message?: string })?.message || `Request failed with status ${res.status}`
+    throw new ApiError(res.status, message, parsed)
   }
 
-  return data as T
+  // Unwrap the { success, status_code, message, data } envelope. Some 200s
+  // (e.g. plain "Logged out") have no meaningful data payload — data is null
+  // in that case, which is fine for callers that don't use the return value.
+  const envelope = parsed as Envelope<T>
+  return envelope?.data as T
 }
 
 async function tryRefresh(): Promise<boolean> {
   if (!refreshToken) return false
   try {
-    // Response shape for /auth/refresh isn't documented in the OpenAPI spec
-    // (empty schema) — assuming it mirrors /auth/login's { access_token, refresh_token }.
-    // Verify against a real response and adjust if the backend returns something else.
-    const result = await request<{ access_token?: string; refresh_token?: string }>('/api/v1/auth/refresh', {
+    // Confirmed shape from api/v1/routes/auth.py's refresh() handler:
+    // { access_token, refresh_token, token_type, expires_in }
+    const result = await request<{ access_token: string; refresh_token: string }>('/api/v1/auth/refresh', {
       method: 'POST',
       body: { refresh_token: refreshToken },
       auth: false,
@@ -105,15 +116,19 @@ export const apiClient = {
   request,
 
   async login(magicDidToken: string) {
-    // The /auth/login response schema is undocumented (empty {} in the OpenAPI
-    // spec). Assuming a standard { access_token, refresh_token } pair here —
-    // confirm against the real response and adjust setTokens/this type if the
-    // backend uses different field names (e.g. accessToken/refreshToken).
-    const result = await request<{ access_token?: string; refresh_token?: string }>('/api/v1/auth/login', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${magicDidToken}` },
-      auth: false,
-    })
+    // Confirmed from api/v1/services/auth.py: the backend calls
+    // magic_client.Utils.parse_authorization_header(authorization_header),
+    // which expects the standard "Bearer <token>" format, not a raw token.
+    // Response shape (TokenResponse): { access_token, refresh_token,
+    // token_type, expires_in, user }.
+    const result = await request<{ access_token: string; refresh_token: string; user: unknown }>(
+      '/api/v1/auth/login',
+      {
+        method: 'POST',
+        headers: { authorization: `Bearer ${magicDidToken}` },
+        auth: false,
+      }
+    )
     setTokens(result)
     return result
   },

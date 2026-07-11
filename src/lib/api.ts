@@ -1,10 +1,7 @@
 import { apiClient, ApiError } from './apiClient'
 
-// NOTE: Most response schemas in the OpenAPI spec are undocumented (FastAPI
-// emits `{}` when no response_model is set). The types below are best-effort
-// based on the request schemas and field names elsewhere in the spec (e.g.
-// UpdateProfileRequest, Wallet) — verify each shape against a real response
-// the first time you call it, and adjust.
+// Confirmed against the real backend source (api/v1/schemas/user.py,
+// api/v1/schemas/auth.py). No longer guessing these shapes.
 
 export type Wallet = {
   chain: string
@@ -15,11 +12,13 @@ export type Wallet = {
 export type UserProfile = {
   id: string
   handle: string | null
-  display_name: string | null
+  display_name: string
   avatar_url: string | null
+  email: string | null
+  login_provider: string | null
   wallets: Wallet[]
-  preferences?: Record<string, unknown>
-  notification_settings?: Record<string, unknown>
+  preferences: Record<string, unknown>
+  notification_settings: Record<string, unknown>
 }
 
 export type FriendSummary = {
@@ -70,11 +69,15 @@ export const api = {
       notification_settings?: Record<string, unknown>
     }) => apiClient.request<UserProfile>('/api/v1/users/me', { method: 'PATCH', body: patch }),
 
-    search: (q: string, limit = 20) =>
-      apiClient.request<FriendSummary[]>(
+    search: async (q: string, limit = 20) => {
+      // Confirmed from api/v1/routes/user.py: data is { results: UserResponse[] },
+      // not a bare array — unwrapped here so callers just get the array.
+      const { results } = await apiClient.request<{ results: FriendSummary[] }>(
         `/api/v1/users/search?q=${encodeURIComponent(q)}&limit=${limit}`,
         { auth: false }
-      ),
+      )
+      return results
+    },
 
     byHandle: (handle: string) =>
       apiClient.request<FriendSummary>(`/api/v1/users/${encodeURIComponent(handle)}`, { auth: false }),

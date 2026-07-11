@@ -15,14 +15,18 @@ function truncateAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
-function loginMethodLabel(method: 'email' | 'google' | null, email: string | null) {
-  if (method === 'google') return 'Google'
-  if (method === 'email') return email ? `Email link (${email})` : 'Email link'
-  return 'Email or Google'
+function loginMethodLabel(provider: string | null | undefined, email: string | null) {
+  // The backend always records login_provider as "magic_link" for every Magic-based
+  // login (see api/v1/services/user.py's get_or_create_by_magic_issuer), regardless
+  // of whether the person actually used email or Google — it doesn't distinguish
+  // them server-side. So this can only honestly say "via Magic", not name the
+  // specific method, unless that gets tracked client-side separately later.
+  if (!provider) return 'Email or Google'
+  return email ? `Magic (${email})` : 'Magic'
 }
 
 export default function YouScreen({ handle }: { handle: string }) {
-  const { user, profile, loginMethod, logout } = useAuth()
+  const { user, profile, logout } = useAuth()
   const [showQR, setShowQR] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [privacy, setPrivacy] = useState(false)
@@ -59,7 +63,7 @@ export default function YouScreen({ handle }: { handle: string }) {
           copyValue={user?.address}
         />
         <SettingsRow label="Handle" value={`@${handle}`} copyValue={`@${handle}`} />
-        <SettingsRow label="Connected login" value={loginMethodLabel(loginMethod, user?.email ?? null)} />
+        <SettingsRow label="Connected login" value={loginMethodLabel(profile?.login_provider, user?.email ?? null)} />
       </SettingsSection>
 
       <SettingsSection title="Preferences">

@@ -1,0 +1,16 @@
+{
+  "name": "mink-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:arbSepolia": "hardhat run scripts/deploy.ts --network arbitrumSepolia",
+    "deploy:arbOne": "hardhat run scripts/deploy.ts --network arbitrumOne"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.0",
+    "dotenv": "^16.4.5"
+  }
+}
