@@ -116,16 +116,17 @@ export const apiClient = {
   request,
 
   async login(magicDidToken: string) {
-    // Confirmed from api/v1/services/auth.py: the backend calls
-    // magic_client.Utils.parse_authorization_header(authorization_header),
-    // which expects the standard "Bearer <token>" format, not a raw token.
-    // Response shape (TokenResponse): { access_token, refresh_token,
-    // token_type, expires_in, user }.
+    // Per the ticket: send the raw Magic DID token as the `authorization`
+    // header value — it is NOT prefixed with "Bearer ". Sending it with a
+    // Bearer prefix causes the backend's magic_client parser to reject it,
+    // returning a 401 "Invalid or expired login token" even for a valid,
+    // unexpired token. Response shape (TokenResponse): { access_token,
+    // refresh_token, token_type, expires_in, user }.
     const result = await request<{ access_token: string; refresh_token: string; user: unknown }>(
       '/api/v1/auth/login',
       {
         method: 'POST',
-        headers: { authorization: `Bearer ${magicDidToken}` },
+        headers: { authorization: magicDidToken },
         auth: false,
       }
     )
