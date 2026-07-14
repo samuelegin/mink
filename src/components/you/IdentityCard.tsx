@@ -1,12 +1,23 @@
 import { useState } from 'react'
 import { Share2, QrCode, Copy, Check } from 'lucide-react'
+import { CHAIN_ID, UNIVERSAL_ACCOUNT_VERSION_V2_SUPPORTED_CHAIN_IDS } from '@particle-network/universal-account-sdk'
 
-const CHAINS = [
-  { name: 'Arbitrum', ticker: 'ARB' },
-  { name: 'Base', ticker: 'BASE' },
-  { name: 'Ethereum', ticker: 'ETH' },
-  { name: 'Polygon', ticker: 'POL' },
-]
+// Ticker + brand color per chain, keyed by the SDK's own CHAIN_ID enum so this
+// can't silently drift from what the Universal Account actually supports (it
+// previously hardcoded a list that included Polygon — which the SDK doesn't
+// support — and omitted Solana, BNB Chain, and X Layer, which it does).
+const CHAIN_META: Record<number, { name: string; ticker: string; color: string }> = {
+  [CHAIN_ID.ETHEREUM_MAINNET]: { name: 'Ethereum', ticker: 'ETH', color: '#627EEA' },
+  [CHAIN_ID.ARBITRUM_MAINNET_ONE]: { name: 'Arbitrum', ticker: 'ARB', color: '#28A0F0' },
+  [CHAIN_ID.BASE_MAINNET]: { name: 'Base', ticker: 'BASE', color: '#0052FF' },
+  [CHAIN_ID.BSC_MAINNET]: { name: 'BNB Chain', ticker: 'BNB', color: '#F0B90B' },
+  [CHAIN_ID.SOLANA_MAINNET]: { name: 'Solana', ticker: 'SOL', color: '#14B896' },
+  [CHAIN_ID.XLAYER_MAINNET]: { name: 'X Layer', ticker: 'XL', color: '#78716C' },
+}
+
+const CHAINS = (UNIVERSAL_ACCOUNT_VERSION_V2_SUPPORTED_CHAIN_IDS as number[])
+  .map((id) => CHAIN_META[id])
+  .filter((chain): chain is { name: string; ticker: string; color: string } => Boolean(chain))
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
@@ -49,20 +60,19 @@ export default function IdentityCard({
       <p className="relative text-sm text-[var(--color-ink-soft)] mt-0.5">{name}</p>
 
       <div className="relative w-full rounded-2xl bg-[var(--color-mink-tint)]/60 border border-[var(--color-mink)]/15 px-5 py-4 mt-6">
-        <p className="font-semibold text-sm">Universal Account</p>
-
-        <div className="flex items-center justify-center divide-x divide-[var(--color-mink)]/15 mt-3">
-          <Metric value={String(CHAINS.length)} label="Chains" />
-          <Metric value="1" label="Address" />
-          <Metric value={truncateAddress(address)} label="Wallet" small />
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-sm">Universal Account</p>
+          <span className="text-[11px] font-medium text-[var(--color-ink-soft)]/70">
+            {CHAINS.length} chains, one balance
+          </span>
         </div>
 
         <button
           onClick={copyAddress}
-          className="w-full flex items-center justify-center gap-2 rounded-full bg-white border border-[var(--color-line)] font-medium text-sm py-3 mt-4 hover:bg-[var(--color-mink-tint)] transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-full bg-white border border-[var(--color-line)] font-medium text-sm py-3 mt-3 hover:bg-[var(--color-mink-tint)] transition-colors"
         >
           {copied ? <Check className="h-4 w-4 text-[var(--color-moss)]" /> : <Copy className="h-4 w-4" />}
-          <span>{copied ? 'Copied' : truncateAddress(address)}</span>
+          <span>{truncateAddress(address)}</span>
           {!copied && <span className="text-[var(--color-ink-soft)]">Copy</span>}
         </button>
 
@@ -70,9 +80,9 @@ export default function IdentityCard({
           {CHAINS.map((chain) => (
             <span
               key={chain.ticker}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold rounded-full bg-white border border-[var(--color-line)] px-2.5 py-1"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full bg-white border border-[var(--color-line)] px-2.5 py-1"
             >
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-mink-deep)]" />
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: chain.color }} />
               {chain.ticker}
             </span>
           ))}
@@ -95,15 +105,6 @@ export default function IdentityCard({
           Show QR
         </button>
       </div>
-    </div>
-  )
-}
-
-function Metric({ value, label, small = false }: { value: string; label: string; small?: boolean }) {
-  return (
-    <div className="flex-1 px-2">
-      <p className={`font-display font-bold ${small ? 'text-sm' : 'text-lg'}`}>{value}</p>
-      <p className="text-[10px] uppercase tracking-wide text-[var(--color-ink-soft)]/60 mt-0.5">{label}</p>
     </div>
   )
 }
