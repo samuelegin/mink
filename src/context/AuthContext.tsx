@@ -40,6 +40,7 @@ type AuthContextValue = {
   backendReady: boolean
   backendError: string | null
   refreshProfile: () => Promise<void>
+  completeOnboarding: () => Promise<void>
   retryBackendSession: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
@@ -78,6 +79,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(me)
     } catch (err) {
       console.error('Profile refresh failed', err)
+    }
+  }
+
+  // api.users.completeOnboarding() hits POST /users/me/onboarding/complete
+  // then re-fetches /me for a known-good UserProfile (see lib/api.ts comment
+  // on why the endpoint's own response body isn't trusted). We just need to
+  // land that fresh profile in state so profile.onboarding_completed flips
+  // and App.tsx moves past the Onboarding screen.
+  async function completeOnboarding() {
+    try {
+      const me = await api.users.completeOnboarding()
+      setProfile(me)
+    } catch (err) {
+      console.error('Completing onboarding failed', err)
+      throw err
     }
   }
 
@@ -200,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         backendReady: backendStatus === 'ready',
         backendError,
         refreshProfile,
+        completeOnboarding,
         retryBackendSession: establishBackendSession,
         loginWithEmail,
         loginWithGoogle,
