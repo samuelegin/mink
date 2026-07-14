@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, ArrowLeft, ChevronDown } from 'lucide-react'
 import type { PayContact } from './types'
-import { mockPaymentClient, friendlyPaymentError, type PaymentPreview } from '../../lib/paymentClient'
+import { friendlyPaymentError, type PaymentPreview } from '../../lib/paymentClient'
+import { universalPaymentClient as paymentClient } from '../../lib/universalPaymentClient'
 import { useCountUp } from '../../hooks/useCountUp'
 
 type Step = 'amount' | 'confirm' | 'sending' | 'success' | 'error'
@@ -25,7 +26,6 @@ function useFadeIn(deps: unknown[]) {
     setVisible(false)
     const id = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
   return {
     opacity: visible ? 1 : 0,
@@ -63,7 +63,7 @@ export default function PaymentSheet({
     setStep('confirm')
     setError(null)
     try {
-      const result = await mockPaymentClient.previewPayment({
+      const result = await paymentClient.previewPayment({
         handle: person.handle,
         amount: numericAmount,
         note,
@@ -76,12 +76,28 @@ export default function PaymentSheet({
     }
   }
 
+  async function pollUntilSettled(transactionId: string, maxAttempts = 15, intervalMs = 3000) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const status = await paymentClient.getTransactionStatus(transactionId)
+      if (status.status === 'completed') return
+      if (status.status === 'failed') throw new Error('Payment failed on-chain.')
+      await new Promise((r) => setTimeout(r, intervalMs))
+    }
+    // Gave up watching after ~45s, but the tx may still land later — don't
+    // claim failure, just stop blocking the UI on it.
+  }
+
   async function handleSend() {
     if (!preview) return
     setStep('sending')
     closableRef.current = false
     try {
-      await mockPaymentClient.executePayment(preview, note)
+      const result = await paymentClient.executePayment(preview, note)
+      if (result.status === 'pending') {
+        await pollUntilSettled(result.transactionId)
+      } else if (result.status === 'failed') {
+        throw new Error('Payment failed on-chain.')
+      }
       setStep('success')
       onSettled?.()
     } catch (err) {
@@ -357,7 +373,7 @@ function SuccessStep({
       <p className="text-[var(--color-ink-soft)] mt-1">
         ${amount.toFixed(2)} sent to {person.name ?? `@${person.handle}`}
       </p>
-      <p className="text-xs text-[var(--color-ink-soft)]/70 mt-1">Delivered instantly.</p>
+      <p className="text-xs text-[var(--color-ink-soft)]/70 mt-1">On its way — usually settles within a minute.</p>
 
       <button
         onClick={onClose}

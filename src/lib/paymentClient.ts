@@ -13,6 +13,7 @@ export type PaymentPreview = {
   sourceChain: string
   destinationChain: string
   estimatedArrival: string
+  _context?: unknown
 }
 
 export type PaymentResult = {
@@ -27,9 +28,6 @@ export type PaymentClient = {
   getTransactionStatus: (transactionId: string) => Promise<PaymentResult>
 }
 
-// Mock implementation. Swap this for a real HTTP-backed client once a backend exists.
-// Every UI component consumes only the PaymentClient interface above, so that swap
-// requires no changes anywhere else in the payment flow.
 export const mockPaymentClient: PaymentClient = {
   async resolveHandle(handle) {
     await new Promise((r) => setTimeout(r, 350))
@@ -53,7 +51,6 @@ export const mockPaymentClient: PaymentClient = {
 
   async executePayment(preview) {
     await new Promise((r) => setTimeout(r, 1200))
-    // Simulated 6% random failure rate so the error state is reachable during testing.
     if (Math.random() < 0.06) {
       throw new Error('NETWORK_CONGESTED')
     }
@@ -75,5 +72,8 @@ export function friendlyPaymentError(err: unknown): string {
   if (message.includes('NETWORK_CONGESTED')) return "The network's a little busy right now."
   if (message.includes('INSUFFICIENT')) return "You don't have enough balance for this payment."
   if (message.includes('HandleNotFound')) return "We couldn't find that handle."
+  if (message.includes('NO_WALLET')) return "We couldn't find your wallet try logging in again."
+  if (message.includes('user rejected') || message.includes('User denied') || message.includes('ACTION_REJECTED'))
+    return 'Cancelled — you closed the signature request.'
   return 'Something went wrong on our end.'
 }
