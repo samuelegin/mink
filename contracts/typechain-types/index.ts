@@ -2,5 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { HandleRegistry } from "./HandleRegistry";
+export type { PaymentRegistry } from "./PaymentRegistry";
 export * as factories from "./factories";
 export { HandleRegistry__factory } from "./factories/HandleRegistry__factory";
+export { PaymentRegistry__factory } from "./factories/PaymentRegistry__factory";

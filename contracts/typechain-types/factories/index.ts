@@ -2,3 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export { HandleRegistry__factory } from "./HandleRegistry__factory";
+export { PaymentRegistry__factory } from "./PaymentRegistry__factory";

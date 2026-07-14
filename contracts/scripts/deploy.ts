@@ -1,11 +1,11 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const HandleRegistry = await ethers.getContractFactory("HandleRegistry");
-  const registry = await HandleRegistry.deploy();
+  const PaymentRegistry = await ethers.getContractFactory("PaymentRegistry");
+  const registry = await PaymentRegistry.deploy();
   await registry.waitForDeployment();
 
-  console.log("HandleRegistry deployed to:", await registry.getAddress());
+  console.log("PaymentRegistry deployed to:", await registry.getAddress());
 }
 
 main().catch((error) => {
