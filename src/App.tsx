@@ -9,7 +9,6 @@ import CTA from './components/CTA'
 import Footer from './components/Footer'
 import AppShell from './components/app/AppShell'
 import Onboarding from './components/onboarding/Onboarding'
-import HandleClaimScreen from './components/handle/HandleClaimScreen'
 import { useAuth } from './context/AuthContext'
 
 function Spinner() {
@@ -36,8 +35,7 @@ function BackendErrorScreen({ message, onRetry }: { message: string; onRetry: ()
 }
 
 function App() {
-  const { status, profile, backendStatus, backendError, refreshProfile, retryBackendSession, completeOnboarding } =
-    useAuth()
+  const { status, profile, backendStatus, backendError, retryBackendSession, completeOnboarding } = useAuth()
 
   if (status === 'checking') {
     return <Spinner />
@@ -59,11 +57,13 @@ function App() {
       return <Onboarding onComplete={completeOnboarding} />
     }
 
-    if (!profile?.handle) {
-      return <HandleClaimScreen onComplete={refreshProfile} />
-    }
+    // Handle claiming as a user-facing step is gone. The backend is expected
+    // to auto-assign a handle at account creation now — this fallback only
+    // guards against a profile that predates that change or a not-yet-synced
+    // backend, so the app never hard-fails on a missing handle.
+    const handle = profile?.handle ?? `user${profile?.id?.slice(0, 8) ?? ''}`
 
-    return <AppShell handle={profile.handle} />
+    return <AppShell handle={handle} />
   }
 
   return (

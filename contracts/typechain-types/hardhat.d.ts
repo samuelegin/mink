@@ -17,23 +17,41 @@ declare module "hardhat/types/runtime" {
       name: "HandleRegistry",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.HandleRegistry__factory>;
+    getContractFactory(
+      name: "PaymentRegistry",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.PaymentRegistry__factory>;
 
     getContractAt(
       name: "HandleRegistry",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.HandleRegistry>;
+    getContractAt(
+      name: "PaymentRegistry",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.PaymentRegistry>;
 
     deployContract(
       name: "HandleRegistry",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.HandleRegistry>;
+    deployContract(
+      name: "PaymentRegistry",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PaymentRegistry>;
 
     deployContract(
       name: "HandleRegistry",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.HandleRegistry>;
+    deployContract(
+      name: "PaymentRegistry",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.PaymentRegistry>;
 
     // default types
     getContractFactory(
