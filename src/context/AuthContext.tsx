@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { magic, getWalletAddress } from '../lib/magic'
-import { apiClient } from '../lib/apiClient'
+import { apiClient, setSessionExpiredHandler } from '../lib/apiClient'
 import { api, type UserProfile } from '../lib/api'
 
 type AuthUser = {
@@ -114,6 +114,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     resumeSession()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Registered once: when apiClient gives up on refreshing (or has no refresh
+  // token to try), drop the UI back to "logged out" instead of leaving it
+  // showing a stale "authenticated" state on top of a cleared session.
+  useEffect(() => {
+    setSessionExpiredHandler(() => {
+      setUser(null)
+      setProfile(null)
+      setBackendStatus('idle')
+      setStatus('idle')
+      setError('Your session expired — please sign in again.')
+    })
+    return () => setSessionExpiredHandler(null)
   }, [])
 
   async function loginWithEmail(email: string) {

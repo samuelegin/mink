@@ -7,18 +7,39 @@ let accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY)
 let refreshToken: string | null = localStorage.getItem(REFRESH_TOKEN_KEY)
 
 function setTokens(tokens: { access_token?: string; refresh_token?: string } | null) {
-  accessToken = tokens?.access_token ?? null
-  refreshToken = tokens?.refresh_token ?? refreshToken
+  if (tokens === null) {
+    // Clear both in-memory tokens, not just access_token — previously refreshToken
+    // was left stale here (`tokens?.refresh_token ?? refreshToken` is a no-op when
+    // tokens is null), so a failed refresh never actually gave up: every later
+    // request kept seeing a "valid" refreshToken and retried the same dead token
+    // forever instead of surfacing a session-expired state.
+    accessToken = null
+    refreshToken = null
+    localStorage.removeItem(ACCESS_TOKEN_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_KEY)
+    return
+  }
+
+  accessToken = tokens.access_token ?? null
+  if (tokens.refresh_token) refreshToken = tokens.refresh_token
 
   if (accessToken) localStorage.setItem(ACCESS_TOKEN_KEY, accessToken)
   else localStorage.removeItem(ACCESS_TOKEN_KEY)
 
-  if (tokens?.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
-  else if (tokens === null) localStorage.removeItem(REFRESH_TOKEN_KEY)
+  if (tokens.refresh_token) localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token)
 }
 
 export function hasStoredSession(): boolean {
   return !!refreshToken
+}
+
+// Fired when the session is definitively gone — refresh failed or there was no
+// refresh token to try — so the UI can drop back to a logged-out state instead
+// of silently sitting on cleared tokens while still showing "authenticated".
+type SessionExpiredHandler = () => void
+let onSessionExpired: SessionExpiredHandler | null = null
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | null) {
+  onSessionExpired = handler
 }
 
 export class ApiError extends Error {
@@ -63,10 +84,16 @@ async function request<T>(
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 
-  if (res.status === 401 && auth && retry && refreshToken) {
-    const refreshed = await tryRefresh()
-    if (refreshed) {
-      return request<T>(path, { ...options, retry: false })
+  if (res.status === 401 && auth) {
+    if (retry && refreshToken) {
+      const refreshed = await tryRefresh()
+      if (refreshed) {
+        return request<T>(path, { ...options, retry: false })
+      }
+    } else if (!refreshToken) {
+      // No refresh token to even try (or the retry above already exhausted one
+      // and cleared it) — the session is gone, not just this one request.
+      onSessionExpired?.()
     }
   }
 
@@ -93,7 +120,23 @@ async function request<T>(
   return envelope?.data as T
 }
 
-async function tryRefresh(): Promise<boolean> {
+// Concurrent 401s (e.g. several requests firing around the same time) must
+// share one refresh call rather than each firing their own — the backend
+// rotates the refresh token on use, so a second concurrent call would present
+// a token the first call already burned and fail spuriously.
+let refreshInFlight: Promise<boolean> | null = null
+
+function tryRefresh(): Promise<boolean> {
+  if (!refreshToken) return Promise.resolve(false)
+  if (!refreshInFlight) {
+    refreshInFlight = doRefresh().finally(() => {
+      refreshInFlight = null
+    })
+  }
+  return refreshInFlight
+}
+
+async function doRefresh(): Promise<boolean> {
   if (!refreshToken) return false
   try {
     // Confirmed shape from api/v1/routes/auth.py's refresh() handler:
@@ -108,6 +151,7 @@ async function tryRefresh(): Promise<boolean> {
   } catch (err) {
     console.error('Token refresh failed', err)
     setTokens(null)
+    onSessionExpired?.()
     return false
   }
 }
@@ -116,17 +160,15 @@ export const apiClient = {
   request,
 
   async login(magicDidToken: string) {
-    // Per the ticket: send the raw Magic DID token as the `authorization`
-    // header value — it is NOT prefixed with "Bearer ". Sending it with a
-    // Bearer prefix causes the backend's magic_client parser to reject it,
-    // returning a 401 "Invalid or expired login token" even for a valid,
-    // unexpired token. Response shape (TokenResponse): { access_token,
-    // refresh_token, token_type, expires_in, user }.
+    // Matches scripts/test-auth.html in the mink backend repo, the reference
+    // harness for this flow: the DID token goes in a standard
+    // "Authorization: Bearer <token>" header. Response shape (TokenResponse):
+    // { access_token, refresh_token, token_type, expires_in, user }.
     const result = await request<{ access_token: string; refresh_token: string; user: unknown }>(
       '/api/v1/auth/login',
       {
         method: 'POST',
-        headers: { authorization: magicDidToken },
+        headers: { Authorization: `Bearer ${magicDidToken}` },
         auth: false,
       }
     )
