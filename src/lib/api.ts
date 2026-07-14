@@ -19,6 +19,12 @@ export type UserProfile = {
   wallets: Wallet[]
   preferences: Record<string, unknown>
   notification_settings: Record<string, unknown>
+  // NOTE: GET /api/v1/users/me declares an empty response schema in
+  // /openapi.json (no response_model), so this field name is still an
+  // assumption — the endpoint itself (POST /users/me/onboarding/complete)
+  // is confirmed, but the exact key returned on the profile is not. Adjust
+  // here if the real payload uses a different name.
+  onboarding_completed: boolean
 }
 
 export type FriendSummary = {
@@ -68,6 +74,14 @@ export const api = {
       preferences?: Record<string, unknown>
       notification_settings?: Record<string, unknown>
     }) => apiClient.request<UserProfile>('/api/v1/users/me', { method: 'PATCH', body: patch }),
+
+    // Confirmed from /openapi.json: POST /api/v1/users/me/onboarding/complete,
+    // no request body. Response schema isn't declared, so we don't trust its
+    // shape — re-fetch /me afterward to get a known-good UserProfile back.
+    completeOnboarding: async () => {
+      await apiClient.request('/api/v1/users/me/onboarding/complete', { method: 'POST' })
+      return apiClient.request<UserProfile>('/api/v1/users/me')
+    },
 
     search: async (q: string, limit = 20) => {
       // Confirmed from api/v1/routes/user.py: data is { results: UserResponse[] },

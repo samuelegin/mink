@@ -11,7 +11,6 @@ import AppShell from './components/app/AppShell'
 import Onboarding from './components/onboarding/Onboarding'
 import HandleClaimScreen from './components/handle/HandleClaimScreen'
 import { useAuth } from './context/AuthContext'
-import { useOnboardingStatus } from './hooks/useOnboardingStatus'
 
 function Spinner() {
   return (
@@ -37,24 +36,27 @@ function BackendErrorScreen({ message, onRetry }: { message: string; onRetry: ()
 }
 
 function App() {
-  const { status, user, profile, backendStatus, backendError, refreshProfile, retryBackendSession } = useAuth()
-  const { onboarded, markOnboarded } = useOnboardingStatus(user?.address)
+  const { status, profile, backendStatus, backendError, refreshProfile, retryBackendSession, completeOnboarding } =
+    useAuth()
 
   if (status === 'checking') {
     return <Spinner />
   }
 
   if (status === 'authenticated') {
-    if (!onboarded) {
-      return <Onboarding onComplete={markOnboarded} />
-    }
-
+    // Onboarding status now lives on the backend profile, so it isn't known
+    // until the backend session has resolved — the loading/error checks have
+    // to come first instead of after an onboarding check based on local storage.
     if (backendStatus === 'loading' || backendStatus === 'idle') {
       return <Spinner />
     }
 
     if (backendStatus === 'error') {
       return <BackendErrorScreen message={backendError ?? 'Something went wrong.'} onRetry={retryBackendSession} />
+    }
+
+    if (!profile?.onboarding_completed) {
+      return <Onboarding onComplete={completeOnboarding} />
     }
 
     if (!profile?.handle) {

@@ -24,6 +24,7 @@ type AuthContextValue = {
   backendError: string | null
   refreshProfile: () => Promise<void>
   retryBackendSession: () => Promise<void>
+  completeOnboarding: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
@@ -61,6 +62,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(me)
     } catch (err) {
       console.error('Profile refresh failed', err)
+    }
+  }
+
+  // Onboarding completion is persisted server-side (profile.onboarding_completed)
+  // rather than local storage, so it follows the account across browsers/devices.
+  // Flip the local flag optimistically so the UI moves straight into the app,
+  // then persist it — if the request fails we log it but don't send the user
+  // back through onboarding, since the flag is one-way and harmless to retry.
+  async function completeOnboarding() {
+    setProfile((prev) => (prev ? { ...prev, onboarding_completed: true } : prev))
+    try {
+      const updated = await api.users.completeOnboarding()
+      setProfile(updated)
+    } catch (err) {
+      console.error('Failed to persist onboarding completion', err)
     }
   }
 
@@ -183,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         backendError,
         refreshProfile,
         retryBackendSession: establishBackendSession,
+        completeOnboarding,
         loginWithEmail,
         loginWithGoogle,
         logout,
