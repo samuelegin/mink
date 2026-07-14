@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@magic-ext/oauth2": "^9.0.0",
+    "@particle-network/universal-account-sdk": "^2.0.3",
     "@tailwindcss/vite": "^4.3.2",
     "ethers": "^6.13.0",
     "jsqr": "^1.4.0",

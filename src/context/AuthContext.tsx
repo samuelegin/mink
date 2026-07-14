@@ -2,6 +2,23 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { magic, getWalletAddress } from '../lib/magic'
 import { apiClient, setSessionExpiredHandler } from '../lib/apiClient'
 import { api, type UserProfile } from '../lib/api'
+import { resolveUniversalAccount, getUniversalAccountAssets } from '../lib/universalAccount'
+
+// Step 1 of the Universal Accounts integration: read-only check that the
+// Magic EOA resolves to a Universal Account and that the SDK/dashboard
+// credentials are wired correctly. No funds are touched here. Logged to
+// the console rather than surfaced in the UI — this is a wiring check,
+// not a feature yet.
+async function checkUniversalAccount(ownerAddress: string) {
+  try {
+    const options = await resolveUniversalAccount(ownerAddress)
+    console.log('[UniversalAccount] resolved smart account options:', options)
+    const assets = await getUniversalAccountAssets(ownerAddress)
+    console.log('[UniversalAccount] primary assets (should be empty/zero, nothing funded yet):', assets)
+  } catch (err) {
+    console.error('[UniversalAccount] resolution failed — check VITE_PARTICLE_* env vars', err)
+  }
+}
 
 type AuthUser = {
   email: string | null
@@ -24,7 +41,6 @@ type AuthContextValue = {
   backendError: string | null
   refreshProfile: () => Promise<void>
   retryBackendSession: () => Promise<void>
-  completeOnboarding: () => Promise<void>
   loginWithEmail: (email: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
@@ -65,27 +81,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Onboarding completion is persisted server-side (profile.onboarding_completed)
-  // rather than local storage, so it follows the account across browsers/devices.
-  // Flip the local flag optimistically so the UI moves straight into the app,
-  // then persist it — if the request fails we log it but don't send the user
-  // back through onboarding, since the flag is one-way and harmless to retry.
-  async function completeOnboarding() {
-    setProfile((prev) => (prev ? { ...prev, onboarding_completed: true } : prev))
-    try {
-      const updated = await api.users.completeOnboarding()
-      setProfile(updated)
-    } catch (err) {
-      console.error('Failed to persist onboarding completion', err)
-    }
-  }
-
   async function loadUser() {
     const info = await magic.user.getInfo()
     const address = getWalletAddress(info)
     if (!address) throw new Error('No wallet address returned from Magic')
     setUser({ email: info.email ?? null, address })
     setStatus('authenticated')
+    void checkUniversalAccount(address) // fire-and-forget, console-only
     await establishBackendSession()
   }
 
@@ -199,7 +201,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         backendError,
         refreshProfile,
         retryBackendSession: establishBackendSession,
-        completeOnboarding,
         loginWithEmail,
         loginWithGoogle,
         logout,
