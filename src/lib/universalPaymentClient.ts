@@ -25,6 +25,7 @@ const SETTLEMENT_TOKEN_ADDRESS = '0xaf88d065e77c8cC2239327C5EDb3A432268e5831'
 
 type TransferContext = {
   ownerAddress: string
+  receiverAddress: string
   transaction: UaTransaction
 }
 
@@ -93,7 +94,7 @@ export const universalPaymentClient: PaymentClient = {
       sourceChain: 'Auto-routed from your balance',
       destinationChain: 'Arbitrum',
       estimatedArrival: 'Usually under a minute',
-      _context: { ownerAddress, transaction } satisfies TransferContext,
+      _context: { ownerAddress, receiverAddress, transaction } satisfies TransferContext,
     }
   },
 
