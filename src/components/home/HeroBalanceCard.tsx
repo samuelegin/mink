@@ -29,7 +29,7 @@ export default function HeroBalanceCard({
 
   return (
     <div
-      className="relative rounded-[32px] overflow-hidden text-white min-h-[420px] lg:min-h-[460px] flex flex-col justify-between p-8 lg:p-12"
+      className="relative rounded-[32px] overflow-hidden text-white min-h-[420px] lg:min-h-[300px] flex flex-col justify-between p-8 lg:px-10 lg:py-7"
       style={{
         backgroundImage: backgroundImage
           ? `linear-gradient(180deg, rgba(10,10,10,0.25), rgba(10,10,10,0.7)), url(${backgroundImage})`
@@ -43,29 +43,28 @@ export default function HeroBalanceCard({
 
       <div className="relative">
         <p className="text-sm text-white/55">{greeting()}</p>
-        <div className="flex items-center gap-2 mt-1">
-          <p className="font-display font-bold text-2xl">{displayName(user?.email ?? null)}</p>
-          <Hand className="h-5 w-5 text-white/60" strokeWidth={2} />
+        <div className="flex items-center gap-2 mt-1 lg:mt-0.5">
+          <p className="font-display font-bold text-2xl lg:text-xl">{displayName(user?.email ?? null)}</p>
+          <Hand className="h-5 w-5 lg:h-4.5 lg:w-4.5 text-white/60" strokeWidth={2} />
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col justify-center py-6">
+      <div className="relative flex-1 flex flex-col justify-center py-6 lg:py-2">
         <p className="text-[11px] uppercase tracking-wider text-white/45">Universal Balance</p>
-        <p className="font-display font-bold text-6xl lg:text-7xl mt-2 tracking-tight">$0.00</p>
-        <p className="text-sm text-white/45 mt-2">One balance across every chain.</p>
+        <p className="font-display font-bold text-6xl mt-2 tracking-tight">$0.00</p>
       </div>
 
-      <div className="relative flex flex-col gap-2.5">
+      <div className="relative flex flex-col gap-2.5 lg:gap-2">
         <button
           onClick={onSend}
-          className="w-full flex items-center justify-center gap-1.5 rounded-full bg-white text-[var(--color-ink)] font-semibold text-sm py-4 hover:bg-white/90 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 rounded-full bg-white text-[var(--color-ink)] font-semibold text-sm py-4 lg:py-3 hover:bg-white/90 transition-colors"
         >
           <ArrowUpRight className="h-4 w-4" />
           Send
         </button>
         <button
           onClick={onRequest}
-          className="w-full flex items-center justify-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold text-sm py-4 hover:bg-white/16 transition-colors"
+          className="w-full flex items-center justify-center gap-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold text-sm py-4 lg:py-3 hover:bg-white/16 transition-colors"
         >
           <ArrowDownLeft className="h-4 w-4" />
           Request

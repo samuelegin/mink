@@ -3,6 +3,7 @@ import { X, ArrowLeft, ChevronDown } from 'lucide-react'
 import type { PayContact } from './types'
 import { friendlyPaymentError, type PaymentPreview } from '../../lib/paymentClient'
 import { universalPaymentClient as paymentClient } from '../../lib/universalPaymentClient'
+import { logPaymentReceipt } from '../../lib/contracts'
 import { useCountUp } from '../../hooks/useCountUp'
 
 type Step = 'amount' | 'confirm' | 'sending' | 'success' | 'error'
@@ -36,10 +37,12 @@ function useFadeIn(deps: unknown[]) {
 
 export default function PaymentSheet({
   person,
+  ownerHandle,
   onClose,
   onSettled,
 }: {
   person: PayContact
+  ownerHandle: string
   onClose: () => void
   onSettled?: () => void
 }) {
@@ -83,8 +86,6 @@ export default function PaymentSheet({
       if (status.status === 'failed') throw new Error('Payment failed on-chain.')
       await new Promise((r) => setTimeout(r, intervalMs))
     }
-    // Gave up watching after ~45s, but the tx may still land later — don't
-    // claim failure, just stop blocking the UI on it.
   }
 
   async function handleSend() {
@@ -100,6 +101,19 @@ export default function PaymentSheet({
       }
       setStep('success')
       onSettled?.()
+
+      const receiverAddress = (preview._context as { receiverAddress?: string } | undefined)?.receiverAddress
+      if (receiverAddress) {
+        void logPaymentReceipt({
+          to: receiverAddress,
+          amountUsd: preview.total,
+          fromHandle: ownerHandle,
+          toHandle: person.handle,
+          note,
+        })
+      } else {
+        console.warn('[PaymentSheet] no receiverAddress in preview context — skipping receipt log')
+      }
     } catch (err) {
       console.error('Payment failed', err)
       setError(friendlyPaymentError(err))
