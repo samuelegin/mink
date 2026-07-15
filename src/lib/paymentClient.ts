@@ -13,6 +13,7 @@ export type PaymentPreview = {
   sourceChain: string
   destinationChain: string
   estimatedArrival: string
+  recipientAddress?: string
   _context?: unknown
 }
 

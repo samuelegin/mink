@@ -94,6 +94,7 @@ export const universalPaymentClient: PaymentClient = {
       sourceChain: 'Auto-routed from your balance',
       destinationChain: 'Arbitrum',
       estimatedArrival: 'Usually under a minute',
+      recipientAddress: receiverAddress,
       _context: { ownerAddress, receiverAddress, transaction } satisfies TransferContext,
     }
   },

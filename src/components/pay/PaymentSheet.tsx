@@ -86,6 +86,8 @@ export default function PaymentSheet({
       if (status.status === 'failed') throw new Error('Payment failed on-chain.')
       await new Promise((r) => setTimeout(r, intervalMs))
     }
+    // Gave up watching after ~45s, but the tx may still land later — don't
+    // claim failure, just stop blocking the UI on it.
   }
 
   async function handleSend() {
@@ -102,17 +104,17 @@ export default function PaymentSheet({
       setStep('success')
       onSettled?.()
 
-      const receiverAddress = (preview._context as { receiverAddress?: string } | undefined)?.receiverAddress
-      if (receiverAddress) {
+      // Fire-and-forget on-chain receipt log — the real payment already
+      // settled via Universal Account above, so this never blocks the UI
+      // and its own errors are swallowed inside logPaymentReceipt.
+      if (preview.recipientAddress) {
         void logPaymentReceipt({
-          to: receiverAddress,
+          to: preview.recipientAddress,
           amountUsd: preview.total,
           fromHandle: ownerHandle,
           toHandle: person.handle,
           note,
         })
-      } else {
-        console.warn('[PaymentSheet] no receiverAddress in preview context — skipping receipt log')
       }
     } catch (err) {
       console.error('Payment failed', err)
