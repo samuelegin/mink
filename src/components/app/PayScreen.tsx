@@ -20,7 +20,13 @@ const ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/
 
 type Modal = 'scan' | 'invite' | 'addContact' | null
 
-export default function PayScreen({ intent = 'send' }: { intent?: 'send' | 'request' }) {
+export default function PayScreen({
+  intent = 'send',
+  ownerHandle,
+}: {
+  intent?: 'send' | 'request'
+  ownerHandle: string
+}) {
   const { backendReady } = useAuth()
   const [query, setQuery] = useState('')
   const [activePerson, setActivePerson] = useState<PayContact | null>(null)
@@ -200,7 +206,7 @@ export default function PayScreen({ intent = 'send' }: { intent?: 'send' | 'requ
       )}
 
       {activePerson && intent !== 'request' && (
-        <PaymentSheet person={activePerson} onClose={() => setActivePerson(null)} onSettled={handlePaymentSettled} />
+        <PaymentSheet person={activePerson} ownerHandle={ownerHandle} onClose={() => setActivePerson(null)} onSettled={handlePaymentSettled} />
       )}
 
       {modal === 'scan' && <QRScanModal onClose={() => setModal(null)} onResolved={handleQRResolved} />}

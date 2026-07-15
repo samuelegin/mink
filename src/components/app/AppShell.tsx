@@ -28,7 +28,7 @@ export default function AppShell({ handle }: { handle: string }) {
             onOpenProfile={() => setTab('you')}
           />
         )}
-        {tab === 'pay' && <PayScreen intent={payIntent} />}
+        {tab === 'pay' && <PayScreen intent={payIntent} ownerHandle={handle} />}
         {tab === 'activity' && <ActivityScreen onSend={() => goToPay('send')} />}
         {tab === 'you' && <YouScreen handle={handle} />}
       </div>
