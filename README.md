@@ -1,61 +1,134 @@
-# mink
+# Mink
+Send money by @handle. Any chain in, Arbitrum out — the chain never shows.
 
-mink is a social payments application built for the UXMaxx Hackathon. The core idea is simple. Sending crypto should feel like sending a message. Instead of copying long wallet addresses, choosing a network, holding gas tokens, or thinking about which chain an asset lives on, a user in mink simply sends money to a friend's handle, such as @samuel. Everything else happens invisibly behind that single interaction.
+**UXmaxx Hackathon 2026 — Samuel Egin · Gabriel Michael Ojomakpene**
 
-mink is built around three sponsor technologies that make this experience possible.
+## Overview
 
-Particle Network's Universal Accounts, running in EIP7702 mode, upgrade a user's existing wallet into a chain abstracted account in place. There is no new address to manage and no separate smart account to deploy. The wallet a user already has becomes capable of holding a unified balance and transacting across chains through a single signature.
+Mink is a chain-abstractedmink is a social payments application. A user logs in with email no seed phrase, no wallet extension and Magic instantly gives them an embedded EOA wallet. That same EOA is upgraded in place into a Particle **Universal Account** via **EIP-7702**: no new address, no asset migration, no smart-account deployment. The user's balance across every supported chain becomes one spendable balance.
 
-Magic provides the embedded wallet and authentication layer. A user signs in with an email link or a Google account and receives a fully functional wallet with no seed phrase, no browser extension, and no separate signup flow to manage.
+When they pay a friend by `@handle`, Mink auto-sources the value from wherever the sender actually holds funds and settles it as native USDC on **Arbitrum One** for the recipient — invisibly. Every settled payment also gets a public, permissionless on-chain receipt via `PaymentRegistry.sol`, verifiable by anyone independent of Mink's own backend.
 
-Arbitrum hosts the on chain identity layer. A dedicated smart contract called the Handle Registry maps human readable handles to wallet addresses and records payment events, giving mink's social feed something real to read from on chain rather than a database mink alone controls.
+Mink turns "which chain is my friend on, do I have gas, do I need to bridge first" into "send $5 to @samuel."
 
-## The problem mink solves
+## Repo Structure
 
-Ordinary crypto payments require a sender to understand blockchain mechanics that have nothing to do with the actual goal of paying a friend. A typical flow forces someone to copy a forty two character address, confirm they are on the correct network, hold a separate gas token for that network, and hope they did not make a mistake anywhere in the process. mink removes every one of those steps from the user's mental model. The blockchain still does the work underneath, but the user only ever sees a handle, an amount, and a message.
+Mink is **not** a monorepo — two independently-installed projects living in one repo:
 
-## Core user flow
+```
+mink/
+├── src/                     React + Vite + Tailwind frontend
+│   ├── components/          Screens: Home, Pay, Activity, You, onboarding
+│   ├── lib/                 magic.ts, universalAccount.ts, universalPaymentClient.ts, contracts.ts
+│   └── context/              Auth + Toast providers
+├── contracts/                Independent Hardhat project (@mink contracts)
+│   ├── contracts/           PaymentRegistry.sol
+│   ├── test/                 Hardhat/Chai test suite
+│   └── scripts/deploy.ts
+├── package.json               Frontend (npm)
+└── contracts/package.json     Contracts (npm, separate install)
+```
 
-A new user opens mink and is guided through a short five screen onboarding carousel that explains the product in plain language, no addresses, no bridges, no chain selection, no gas. After onboarding, the user authenticates through Magic using either an email link or Google sign in. Immediately after authenticating for the first time, the user is required to claim a unique handle before they can enter the rest of the application. This claim step is treated as core account setup rather than an optional profile detail, since the handle is the user's entire payment identity inside mink.
+Install each independently: `npm install` at the root for the frontend, `cd contracts && npm install` for the contracts project. There's no shared workspace tooling — the two are deployed and versioned separately on purpose, since the frontend targets a live app and the contract targets a testnet.
 
-Once inside the application, mink is organized into four main sections, accessible through a bottom tab bar on mobile and a persistent left sidebar on desktop.
+## The Problem
 
-The Home screen is centered on the user's unified balance. It shows a large balance card, quick actions for sending and requesting money, a short list of recent people the user has interacted with, a preview of recent activity, and a small profile completion checklist. It intentionally avoids exposing wallet addresses or chain details anywhere on the page.
+Sending crypto to a friend usually means:
 
-The Pay screen is where a user actually sends money. It opens with a prominent search bar for finding a handle, contact, or recent recipient, followed by quick action cards, a horizontally scrolling row of recent people, and a full alphabetical contact list. Selecting a person opens a payment sheet where the user enters an amount, optionally attaches a short message such as coffee or rent, confirms the payment, and sees a success screen once it completes.
+- **Pick the right chain** — sender and recipient have to agree on one, or the payment fails
+- **Hold the right token, on the right chain** — "I have USDC but on the wrong chain" is a routine dead end
+- **Pay gas in a specific native token** — another asset to hold just to move the one you actually want to send
+- **Bridge manually first** — a separate app, a separate wait, before the actual payment even starts
+- **New wallet, new seed phrase** — the onboarding cost kills casual, Venmo-style usage before it starts
 
-The Activity screen is designed to feel like a social feed rather than a transaction ledger. At the top, a horizontally scrolling row of story style avatars shows the people a user has recently paid or been paid by, similar in spirit to a messaging app's recent contacts. Below that sits a combined search and filter panel, a compact monthly summary of money received and sent, and a chronological, grouped feed of individual payments, each shown as a small social event such as Alex paid you for coffee rather than a row in a table.
+None of this is what "send $5 to a friend" should feel like.
 
-The You screen is the user's identity and account settings surface. It shows the user's avatar, display name, and handle, along with buttons to share that handle or display a scannable QR code that encodes a payment link. Below the profile header, the page is organized into plain settings sections for account details, preferences, security, and support, deliberately avoiding the temptation to turn a profile page into a second analytics dashboard.
+## The Solution
 
-## Technical architecture
+Mink removes every one of those steps:
 
-mink is split into two independent projects that together form the full application.
+- **Magic** handles login (email magic link / Google) and gives every user an embedded wallet with zero setup
+- **Particle Universal Accounts in EIP-7702 mode** upgrades that same wallet into a chain-abstracted account — one balance, any chain, no migration
+- **Arbitrum One** is the fixed settlement destination — recipients always get USDC there, regardless of what chain the sender's funds started on
+- **PaymentRegistry.sol** logs a public receipt for every settled payment — proof-of-payment that doesn't depend on trusting Mink's backend
 
-The frontend is a React and TypeScript application built with Vite and styled with Tailwind CSS. It uses the Magic SDK for authentication and embedded wallet creation, including both email link login and Google OAuth through the Magic OAuth extension. Ethers is used for all direct contract reads and writes. The application maintains its own design system built around a warm, neo brutalist inspired palette with a paper background, dark ink text, and a muted brown mink accent color, deliberately avoiding both dark mode crypto aesthetics and generic blue gradient fintech styling.
+## User Flow
 
-The contracts project is a Hardhat workspace containing the Handle Registry smart contract, its full test suite, and deployment scripts targeting Arbitrum Sepolia for testing and Arbitrum One for production use. The contract has already been audited internally during development, including a fix for a state consistency bug in the address update function, and is covered by an extensive test suite that treats the contract as though it were undergoing a third party audit.
+```
+01  Log in with email or Google              Magic creates an embedded wallet, no seed phrase
+02  Search a friend by @handle                Handle resolves to their wallet address
+03  Enter an amount and hit Send              UA previews the transfer + fee across all chains
+04  Sign once (twice on a chain's first tx)   EIP-7702 auth (if needed) + the transfer itself
+05  UA auto-sources value from any chain      Settles as native USDC on Arbitrum for the recipient
+06  Receipt logged on-chain                    PaymentRegistry.logPayment() — public, verifiable
+```
 
-## The Handle Registry contract
+## Architecture
 
-The Handle Registry is intentionally scoped as an identity and bookkeeping layer rather than a payment router. Value transfer between users is expected to happen through Particle's Universal Accounts directly, wallet to wallet, since that is both the simplest and the most compliant approach for the Universal Accounts hackathon track. The contract's job is narrower and more focused. It lets a user register a unique handle tied to their wallet address, lets that mapping be updated later if the user's controlling wallet changes, resolves a handle back to an address for any caller, and lets the true owner of a handle log a completed payment so that mink's social feed has a real on chain event to display. Every state changing function is protected so that only the actual owner of a handle can update it or log a payment on its behalf, which closes off the obvious way someone could otherwise fabricate a fake payment in the feed.
+| Contract | Role |
+|---|---|
+| `PaymentRegistry` | Permissionless on-chain payment receipt log — records sender, recipient, amount, and note per payment; maintains running sent/received totals per address; never custodies funds, called only after a payment has already settled via UA |
 
-## Current implementation status
+## Live Deployment
 
-At this stage in development, the frontend is fully built and navigable end to end, including onboarding, authentication, handle claiming, and all four main application screens. The handle claim flow currently runs against a local mock registry rather than the live contract, controlled by a single flag in the codebase, so that UI work can continue without spending testnet funds on every iteration. The Handle Registry contract itself is written, tested, deployed, and verified on Arbitrum Sepolia, and is ready to be connected once the mock flag is switched off. Wiring an actual value transfer through Particle's Universal Accounts SDK in EIP7702 mode is the primary remaining piece of work required to satisfy the hackathon's core requirement of a real cross chain operation moving value.
+| Component | Location |
+|---|---|
+| Frontend | [mink-pearl.vercel.app](https://mink-pearl.vercel.app) |
+| Settlement chain (UA) | Arbitrum One (mainnet) — native USDC |
+| `PaymentRegistry` | Arbitrum Sepolia (testnet) — *address pending first deploy, see `contracts/scripts/deploy.ts`* |
 
-Areas of the application that are deliberately left as honest empty states rather than filled with fabricated demo data include the activity feed, recent people lists, and monthly statistics on the You page, since none of them have a real data source connected yet. Each of these components is already written to accept real data through simple props, so connecting them later does not require rebuilding any UI.
+`PaymentRegistry` runs on Sepolia deliberately, decoupled from the real mainnet settlement chain — the receipt is supplementary proof, not the payment itself, so it costs free testnet gas instead of real mainnet gas on every send.
 
-## Project structure
+## Running Locally
 
-The repository is organized as two sibling folders. The frontend folder contains the Vite React application, with page level screens under src components app, shared design system components grouped by feature under folders such as home, pay, activity, you, onboarding, and handle, and supporting logic under src lib, src hooks, and src context. The contracts folder contains the Hardhat project, with the Handle Registry contract itself under contracts, the audit style test suite under test, and deployment scripts under scripts.
+**Prerequisites**
+- Node.js v18+
+- A Magic publishable key ([dashboard.magic.link](https://dashboard.magic.link))
+- Particle Project ID / Client Key / App ID ([dashboard.particle.network](https://dashboard.particle.network))
 
-## Getting started
+**Environment variables** — create `.env` at the repo root:
 
-To run the frontend locally, install dependencies with npm install inside the frontend folder, copy the example environment file to a real dot env file, fill in a Magic publishable key obtained from the Magic dashboard, and start the development server with npm run dev.
+```
+VITE_MAGIC_PUBLISHABLE_KEY=
+VITE_PARTICLE_PROJECT_ID=
+VITE_PARTICLE_CLIENT_KEY=
+VITE_PARTICLE_APP_ID=
+VITE_PAYMENT_REGISTRY_ADDRESS=
+```
 
-To work with the smart contracts, install dependencies with npm install inside the contracts folder, copy the example environment file and fill in a private key funded with Arbitrum Sepolia testnet ETH along with an Etherscan API key for verification, then use npm run compile to build the contract, npm test to run the full test suite, and npm run deploy:arbSepolia to deploy to Arbitrum Sepolia.
+**Install and run the frontend**
 
-## Hackathon context
+```
+npm install
+npm run dev
+```
 
-mink was built for the UXMaxx hackathon and targets three separate prize tracks that share a common technical foundation. The Universal Accounts track, sponsored by Particle Network, requires use of the Universal Accounts SDK in EIP7702 mode along with at least one cross chain operation that moves real value. The Arbitrum track rewards consumer applications where Arbitrum quietly powers the experience behind a chain abstracted user interface. The Magic Labs bonus challenge rewards the most creative and seamless use of Magic's embedded wallet infrastructure for onboarding. mink's architecture, an EOA upgraded in place through Particle, embedded and authenticated through Magic, with identity and payment logging recorded on Arbitrum, is designed to satisfy all three simultaneously rather than treating them as three separate integrations bolted together.
+**Contracts — install, test, and deploy separately**
+
+```
+cd contracts
+npm install
+npm run compile
+npm run test
+npm run deploy:arbSepolia
+```
+
+Copy the deployed address into `VITE_PAYMENT_REGISTRY_ADDRESS` above.
+
+## Tech Stack
+
+| Layer | Stack |
+|---|---|
+| Frontend | React · Vite · TypeScript · Tailwind CSS |
+| Auth / Wallet | Magic SDK · `@magic-ext/oauth2` (Google OAuth) |
+| Chain Abstraction | Particle Universal Account SDK — EIP-7702 mode |
+| Blockchain Lib | ethers v6 |
+| Smart Contracts | Solidity 0.8.24 · Hardhat · Chai/Mocha |
+| Settlement | Arbitrum One (USDC) |
+
+## Team
+
+**Samuel Egin** — Blockchain Dev · [@0xEtherfren](https://twitter.com/0xEtherfren)
+**Gabriel Michael Ojomakpene** — Frontend Dev
+
+*UXmaxx Hackathon 2026*
