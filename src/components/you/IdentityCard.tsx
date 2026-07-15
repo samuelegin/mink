@@ -27,7 +27,7 @@ function ChainBadge({ chain }: { chain: { name: string; icon: string } }) {
   return (
     <div
       title={chain.name}
-      className="group relative h-[22px] w-[22px] rounded-full bg-white ring-1 ring-black/5 flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:ring-white/50 cursor-default"
+      className="relative h-6 w-6 rounded-full bg-white/95 ring-1 ring-white/10 flex items-center justify-center shrink-0 overflow-hidden"
     >
       <span
         className="h-3.5 w-3.5 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
@@ -71,7 +71,7 @@ export default function IdentityCard({
           {name.charAt(0).toUpperCase()}
         </div>
 
-        <div className="relative mt-4 flex items-center gap-1.5">
+        <div className="relative mt-3 flex items-center gap-1.5">
           <h2 className="font-display font-bold text-[30px] sm:text-[36px] leading-none tracking-tight">
             @{handle}
           </h2>
@@ -81,16 +81,11 @@ export default function IdentityCard({
           />
         </div>
         <p className="relative text-sm text-[var(--color-ink-soft)]/80 mt-1">{name}</p>
-
-        <span className="relative mt-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--color-mink-tint)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--color-mink-deep)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-moss)]" />
-          Universal crypto identity
-        </span>
       </div>
 
       {/* ---------- Universal Account card ---------- */}
-      <div className="relative mt-6 rounded-[24px] p-[1px] bg-gradient-to-br from-[var(--color-mink)]/70 via-[var(--color-mink-deep)] to-[var(--color-ink)] shadow-[0_20px_45px_-20px_rgba(22,20,15,0.55)]">
-        <div className="relative overflow-hidden rounded-[23px] bg-gradient-to-br from-[#3A2A1D] via-[var(--color-ink)] to-[#0E0D0A] px-6 py-4 sm:px-8 sm:py-5">
+      <div className="relative mt-5 rounded-[28px] p-[1px] bg-gradient-to-br from-[var(--color-mink)]/70 via-[var(--color-mink-deep)] to-[var(--color-ink)] shadow-[0_20px_45px_-20px_rgba(22,20,15,0.55)]">
+        <div className="relative overflow-hidden rounded-[27px] bg-gradient-to-br from-[#3A2A1D] via-[var(--color-ink)] to-[#0E0D0A] px-7 py-4 sm:px-10 sm:py-5">
           {/* inner highlight sheen, top edge */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
           <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[var(--color-mink)]/25 blur-3xl" />
@@ -102,24 +97,30 @@ export default function IdentityCard({
             </span>
           </div>
 
-          <div className="relative flex items-center justify-between gap-4 mt-2.5">
+          <div className="relative flex items-center justify-between gap-4 mt-3">
             <span className="font-mono text-[19px] sm:text-[21px] text-white tracking-wide truncate">
               {truncateAddress(address)}
             </span>
             <button
               onClick={copyAddress}
               aria-label={copied ? 'Address copied' : 'Copy wallet address'}
-              className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-white/50 transition-all duration-200 hover:text-white hover:bg-white/10 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+              className="shrink-0 flex items-center gap-1.5 h-9 px-4 rounded-full bg-white/10 border border-white/15 text-[12.5px] font-medium text-white/85 backdrop-blur-sm transition-all duration-200 hover:bg-white/16 hover:border-white/25 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
             >
               {copied ? (
-                <Check className="h-4 w-4 text-[#7CD9A8] animate-pop-check" />
+                <>
+                  <Check className="h-3.5 w-3.5 text-[#7CD9A8] animate-pop-check" />
+                  <span className="text-[#7CD9A8]">Copied</span>
+                </>
               ) : (
-                <Copy className="h-4 w-4" />
+                <>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy
+                </>
               )}
             </button>
           </div>
 
-          <div className="relative flex items-center gap-2.5 mt-3">
+          <div className="relative flex items-center justify-start gap-3 mt-4">
             {CHAINS.map((chain) => (
               <ChainBadge key={chain.name} chain={chain} />
             ))}
