@@ -27,10 +27,10 @@ function ChainBadge({ chain }: { chain: { name: string; icon: string } }) {
   return (
     <div
       title={chain.name}
-      className="group relative h-6 w-6 rounded-full bg-white ring-1 ring-black/5 flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:ring-white/50 cursor-default"
+      className="group relative h-[22px] w-[22px] rounded-full bg-white ring-1 ring-black/5 flex items-center justify-center shrink-0 overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:ring-white/50 cursor-default"
     >
       <span
-        className="h-[15px] w-[15px] [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
+        className="h-3.5 w-3.5 [&>svg]:block [&>svg]:h-full [&>svg]:w-full"
         dangerouslySetInnerHTML={{ __html: CHAIN_ICON_SVG[chain.icon] }}
       />
     </div>
@@ -90,40 +90,36 @@ export default function IdentityCard({
 
       {/* ---------- Universal Account card ---------- */}
       <div className="relative mt-6 rounded-[24px] p-[1px] bg-gradient-to-br from-[var(--color-mink)]/70 via-[var(--color-mink-deep)] to-[var(--color-ink)] shadow-[0_20px_45px_-20px_rgba(22,20,15,0.55)]">
-        <div className="relative overflow-hidden rounded-[23px] bg-gradient-to-br from-[#3A2A1D] via-[var(--color-ink)] to-[#0E0D0A] px-6 py-5 sm:px-7 sm:py-6">
+        <div className="relative overflow-hidden rounded-[23px] bg-gradient-to-br from-[#3A2A1D] via-[var(--color-ink)] to-[#0E0D0A] px-6 py-4 sm:px-8 sm:py-5">
           {/* inner highlight sheen, top edge */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
           <div className="pointer-events-none absolute -top-16 -right-16 h-48 w-48 rounded-full bg-[var(--color-mink)]/25 blur-3xl" />
 
           <div className="relative flex items-center justify-between gap-3">
-            <h3 className="font-display font-semibold text-white text-[15px]">Universal Account</h3>
+            <h3 className="font-display font-semibold text-white text-[13px]">Universal Account</h3>
             <span className="text-[11px] font-medium text-white/50 whitespace-nowrap">
               {CHAINS.length} Networks
             </span>
           </div>
 
-          <button
-            onClick={copyAddress}
-            aria-label={copied ? 'Address copied' : 'Copy wallet address'}
-            className="relative w-full mt-3 flex items-center justify-between gap-3 rounded-2xl bg-white/8 border border-white/12 backdrop-blur-sm px-4 py-2.5 transition-all duration-200 hover:bg-white/12 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 active:scale-[0.99]"
-          >
-            <span className="font-mono text-[14px] text-white tracking-wide">{truncateAddress(address)}</span>
-            <span className="flex items-center gap-1.5 text-[12px] font-medium text-white/60">
-              {copied ? (
-                <>
-                  <Check key="check" className="h-3.5 w-3.5 text-[#7CD9A8] animate-pop-check" />
-                  <span className="text-[#7CD9A8]">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy
-                </>
-              )}
+          <div className="relative flex items-center justify-between gap-4 mt-2.5">
+            <span className="font-mono text-[19px] sm:text-[21px] text-white tracking-wide truncate">
+              {truncateAddress(address)}
             </span>
-          </button>
+            <button
+              onClick={copyAddress}
+              aria-label={copied ? 'Address copied' : 'Copy wallet address'}
+              className="shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-white/50 transition-all duration-200 hover:text-white hover:bg-white/10 active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-[#7CD9A8] animate-pop-check" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </button>
+          </div>
 
-          <div className="relative flex flex-wrap items-center gap-2 mt-3.5">
+          <div className="relative flex items-center gap-2.5 mt-3">
             {CHAINS.map((chain) => (
               <ChainBadge key={chain.name} chain={chain} />
             ))}
