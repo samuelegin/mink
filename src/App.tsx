@@ -71,12 +71,12 @@ function App() {
       <Navbar />
       <main>
         <Hero />
+        <CTA />
         <PoweredBy />
         <HowItWorks />
         <FeedPreview />
         <UniversalBalance />
         <Community />
-        <CTA />
       </main>
       <Footer />
     </div>

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 
 export default function CTA() {
   const ref = useReveal<HTMLDivElement>()
-  const { user, status, error, loginWithEmail, loginWithGoogle, logout } = useAuth()
+  const { user, status, error, loginWithEmail, logout } = useAuth()
   const [email, setEmail] = useState('')
 
   const isBusy = status === 'sending' || status === 'checking'
@@ -29,7 +29,7 @@ export default function CTA() {
                 You're in.
               </h2>
               <p className="mt-5 text-[var(--color-paper)]/65 max-w-md mx-auto break-all">
-                {user.email ?? 'Signed in with Google'}
+                {user.email ?? 'Signed in'}
                 <br />
                 <span className="text-[var(--color-paper)]/45 text-sm">{user.address}</span>
               </p>
@@ -68,21 +68,6 @@ export default function CTA() {
                 >
                   {status === 'sending' && <Loader2 className="h-4 w-4 animate-spin" />}
                   {status === 'sending' ? 'Check your email…' : "Get started — it's free"}
-                </button>
-
-                <div className="flex items-center gap-3 w-full text-[var(--color-paper)]/40 text-xs">
-                  <div className="h-px flex-1 bg-[var(--color-paper)]/15" />
-                  or
-                  <div className="h-px flex-1 bg-[var(--color-paper)]/15" />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={loginWithGoogle}
-                  disabled={isBusy}
-                  className="w-full rounded-full bg-[var(--color-paper)] text-[var(--color-ink)] font-semibold px-8 py-3.5 hover:bg-[var(--color-paper)]/90 transition-colors disabled:opacity-60"
-                >
-                  Continue with Google
                 </button>
               </form>
 
