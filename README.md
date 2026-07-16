@@ -1,7 +1,7 @@
 # mink
 
 **Send money like a message.**
-A chain-abstracted social payments app powered by Universal Accounts.
+A chain-abstracted social payments app — powered by Universal Accounts.
 
 **UXmaxx Hackathon 2026 — Samuel Egin · Gabriel Michael Ojomakpene**
 
@@ -26,7 +26,7 @@ mink removes blockchain from the payment experience entirely.
 
 ## Why Universal Accounts
 
-Instead of asking users **"What chain are you on?"** network selection, bridging, gas management, all friction that stops adoption mink asks one question: **"Who do you want to pay?"**
+Instead of asking users **"What chain are you on?"** — network selection, bridging, gas management, all friction that stops adoption — mink asks one question: **"Who do you want to pay?"**
 
 Chain abstraction handles everything else. The result is invisible infrastructure: all the power of blockchain, none of the complexity. Payments just work.
 
@@ -45,11 +45,11 @@ The experience feels like sending a message, not executing a blockchain transact
 
 ## Why It's Different
 
-Traditional wallets focus on transactions. mink focuses on people sending money to someone you know, not an address you copied. That's the shape we're building the Activity feed and receipts around: `@sam paid @jane $12 ☕`, not a hash.
+Traditional wallets focus on transactions. mink focuses on people — sending money to someone you know, not an address you copied. That's the shape we're building the Activity feed and receipts around: `@sam paid @jane $12 ☕`, not a hash.
 
 ## Overview
 
-A user logs in with email no seed phrase, no wallet extension and Magic instantly gives them an embedded EOA wallet. That same EOA is upgraded in place into a Particle **Universal Account** via **EIP-7702**: no new address, no asset migration, no smart-account deployment. The user's balance across every supported chain becomes one spendable balance.
+A user logs in with email — no seed phrase, no wallet extension — and Magic instantly gives them an embedded EOA wallet. That same EOA is upgraded in place into a Particle **Universal Account** via **EIP-7702**: no new address, no asset migration, no smart-account deployment. The user's balance across every supported chain becomes one spendable balance.
 
 When they pay a friend by `@handle`, mink auto-sources the value from wherever the sender actually holds funds and settles it as native USDC on **Arbitrum One** for the recipient — invisibly. Every settled payment also gets a public, permissionless on-chain receipt via `PaymentRegistry.sol`, verifiable by anyone independent of mink's own backend.
 
@@ -93,7 +93,7 @@ PaymentRegistry.sol  →  public on-chain receipt (Arbitrum Sepolia)
 
 | Contract | Role |
 |---|---|
-| `PaymentRegistry` | Permissionless on-chain payment receipt log records sender, recipient, amount, and note per payment; maintains running sent/received totals per address; never custodies funds, called only after a payment has already settled via UA |
+| `PaymentRegistry` | Permissionless on-chain payment receipt log — records sender, recipient, amount, and note per payment; maintains running sent/received totals per address; never custodies funds, called only after a payment has already settled via UA |
 
 `PaymentRegistry` runs on Arbitrum **Sepolia** deliberately, decoupled from the real mainnet settlement chain — the receipt is supplementary proof, not the payment itself, so it costs free testnet gas instead of real mainnet gas on every send.
 
@@ -172,6 +172,17 @@ Copy the deployed address into `VITE_PAYMENT_REGISTRY_ADDRESS` above.
 | Blockchain Lib | ethers v6 |
 | Smart Contracts | Solidity 0.8.24 · Hardhat · Chai/Mocha |
 | Settlement | Arbitrum One (USDC) |
+
+## Screenshots
+
+| | |
+|---|---|
+| **Landing** — email-only signup, first thing you see | **Home** — one unified balance across every chain |
+| ![Landing page](docs/screenshots/landing.png) | ![Home screen](docs/screenshots/home.jpg) |
+| **Pay** — send by @handle, scan a QR, or paste an address | **Receive** — shareable QR tied to your @handle |
+| ![Pay screen](docs/screenshots/pay.jpg) | ![Receive money QR](docs/screenshots/receive-qr.png) |
+| **Activity** — sent, received, and pending, at a glance | |
+| ![Activity screen](docs/screenshots/activity.jpg) | |
 
 ## Vision
 
