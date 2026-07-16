@@ -175,14 +175,25 @@ Copy the deployed address into `VITE_PAYMENT_REGISTRY_ADDRESS` above.
 
 ## Screenshots
 
-| | |
-|---|---|
-| **Landing** — email-only signup, first thing you see | **Home** — one unified balance across every chain |
-| ![Landing page](docs/screenshots/landing.png) | ![Home screen](docs/screenshots/home.jpg) |
-| **Pay** — send by @handle, scan a QR, or paste an address | **Receive** — shareable QR tied to your @handle |
-| ![Pay screen](docs/screenshots/pay.jpg) | ![Receive money QR](docs/screenshots/receive-qr.png) |
-| **Activity** — sent, received, and pending, at a glance | |
-| ![Activity screen](docs/screenshots/activity.jpg) | |
+**Landing** — email-only signup, first thing you see
+
+<img src="docs/screenshots/landing.png" width="480" alt="Landing page" />
+
+**Home** — one unified balance across every chain
+
+<img src="docs/screenshots/home.jpg" width="220" alt="Home screen" />
+
+**Pay** — send by @handle, scan a QR, or paste an address
+
+<img src="docs/screenshots/pay.jpg" width="220" alt="Pay screen" />
+
+**Receive** — shareable QR tied to your @handle
+
+<img src="docs/screenshots/receive-qr.png" width="320" alt="Receive money QR" />
+
+**Activity** — sent, received, and pending, at a glance
+
+<img src="docs/screenshots/activity.jpg" width="220" alt="Activity screen" />
 
 ## Vision
 
